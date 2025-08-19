@@ -14,6 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendees: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          url_slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          url_slug: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          url_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_permissions: {
         Row: {
           created_at: string | null
@@ -73,11 +152,56 @@ export type Database = {
         }
         Relationships: []
       }
+      saved: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          event_id: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          event_id: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          event_id?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_event_slug: {
+        Args: { event_date: string; event_name: string }
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

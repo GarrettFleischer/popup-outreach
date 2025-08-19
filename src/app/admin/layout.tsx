@@ -50,9 +50,6 @@ export default function AdminLayout({
               <span className="text-sm text-gray-600">
                 Welcome, {user.profile.first_name} {user.profile.last_name}
               </span>
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                Level {user.profile.profile_permissions?.permission_level} Admin
-              </span>
               <Button onClick={handleLogout} variant="danger" size="sm">
                 Logout
               </Button>

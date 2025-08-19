@@ -13,8 +13,8 @@ export default function NotAuthorizedPage() {
     router.push("/auth/login");
   };
 
-  const handleGoHome = () => {
-    router.push("/");
+  const handleTryAgain = () => {
+    router.push("/admin/dashboard");
   };
 
   return (
@@ -77,12 +77,12 @@ export default function NotAuthorizedPage() {
 
             <div className="space-y-3">
               <Button
-                onClick={handleGoHome}
+                onClick={handleTryAgain}
                 variant="primary"
                 size="default"
                 className="w-full"
               >
-                Go to Home Page
+                Try Again
               </Button>
               <Button
                 onClick={handleLogout}
