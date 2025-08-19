@@ -27,13 +27,12 @@ export default function EventPage() {
         if (error) {
           console.error("Error fetching event:", error);
           if (error.code === "PGRST116") {
-            // No rows returned
-            router.push("/events");
+            router.push("/");
           }
         } else {
           // Check if event is archived
           if (data.archived) {
-            router.push("/events");
+            router.push("/");
             return;
           }
           setEvent(data);
@@ -64,8 +63,8 @@ export default function EventPage() {
             Event Not Found
           </h1>
           <Link
-            href="/events"
-            className="text-indigo-600 hover:text-indigo-700 underline"
+            href="/"
+            className="text-gray-600 hover:text-gray-800 underline"
           >
             Back to Events
           </Link>
@@ -79,7 +78,7 @@ export default function EventPage() {
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Back to events link */}
         <Link
-          href="/events"
+          href="/"
           className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-700 mb-8"
         >
           <svg
