@@ -101,7 +101,10 @@ export default function EventPage() {
         {/* Event details */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8">
           <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                {event.name}
+              </h1>
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 {new Date(event.date).toLocaleDateString("en-US", {
                   weekday: "long",
@@ -109,21 +112,15 @@ export default function EventPage() {
                   month: "long",
                   day: "numeric",
                 })}
-              </span>
-              <span className="text-sm text-gray-500">
-                Created{" "}
-                {event.created_at &&
-                  new Date(event.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                {" at "}
+                {new Date(event.date).toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                  timeZoneName: "short",
+                })}
               </span>
             </div>
-
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              {event.name}
-            </h1>
 
             {event.archived && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">

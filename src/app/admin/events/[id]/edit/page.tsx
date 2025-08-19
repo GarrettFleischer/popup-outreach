@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import {
   getEventsWithStats,
   getEventAttendees,
@@ -32,6 +33,13 @@ export default function EditEventPage() {
     time: "12:00",
     description: "",
     archived: false,
+    gradient_from_color: "#f97316",
+    gradient_through_color: "#ea580c",
+    gradient_to_color: "#dc2626",
+    custom_title: "",
+    custom_subtitle: "",
+    custom_description: "",
+    grand_prize: "",
   });
 
   const loadEventData = useCallback(async () => {
@@ -82,6 +90,13 @@ export default function EditEventPage() {
         time: localTime,
         description: foundEvent.description || "",
         archived: foundEvent.archived || false,
+        gradient_from_color: foundEvent.gradient_from_color || "#3B82F6",
+        gradient_through_color: foundEvent.gradient_through_color || "#8B5CF6",
+        gradient_to_color: foundEvent.gradient_to_color || "#EC4899",
+        custom_title: foundEvent.custom_title || "",
+        custom_subtitle: foundEvent.custom_subtitle || "",
+        custom_description: foundEvent.custom_description || "",
+        grand_prize: foundEvent.grand_prize || "",
       });
 
       loadEventData();
@@ -117,6 +132,13 @@ export default function EditEventPage() {
         date: utcDateTime.toISOString(),
         description: editForm.description,
         archived: editForm.archived,
+        gradient_from_color: editForm.gradient_from_color,
+        gradient_through_color: editForm.gradient_through_color,
+        gradient_to_color: editForm.gradient_to_color,
+        custom_title: editForm.custom_title,
+        custom_subtitle: editForm.custom_subtitle,
+        custom_description: editForm.custom_description,
+        grand_prize: editForm.grand_prize,
       });
 
       alert("Event updated successfully!");
@@ -280,6 +302,146 @@ export default function EditEventPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                     placeholder="Enter event description"
                   />
+                </div>
+
+                {/* Styling Options */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Styling Options
+                  </h3>
+
+                  {/* Gradient Colors */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <ColorPicker
+                        value={editForm.gradient_from_color}
+                        onChange={(color) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            gradient_from_color: color,
+                          }))
+                        }
+                        label="Gradient From Color"
+                        placeholder="#3B82F6"
+                      />
+                    </div>
+
+                    <div>
+                      <ColorPicker
+                        value={editForm.gradient_through_color}
+                        onChange={(color) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            gradient_through_color: color,
+                          }))
+                        }
+                        label="Gradient Through Color"
+                        placeholder="#8B5CF6"
+                      />
+                    </div>
+
+                    <div>
+                      <ColorPicker
+                        value={editForm.gradient_to_color}
+                        onChange={(color) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            gradient_to_color: color,
+                          }))
+                        }
+                        label="Gradient To Color"
+                        placeholder="#EC4899"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gradient Preview */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Gradient Preview
+                    </label>
+                    <div
+                      className="w-full h-20 rounded-lg border-2 border-gray-300"
+                      style={{
+                        background: `linear-gradient(to bottom, ${editForm.gradient_from_color}, ${editForm.gradient_through_color}, ${editForm.gradient_to_color})`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Custom Content Fields */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Custom Title (overrides event name)
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.custom_title}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            custom_title: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                        placeholder="Leave empty to use event name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Custom Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.custom_subtitle}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            custom_subtitle: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                        placeholder="Enter custom subtitle"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Custom Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editForm.custom_description}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            custom_description: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                        placeholder="Enter custom description"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Grand Prize
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.grand_prize}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            grand_prize: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                        placeholder="e.g., Oculus Quest VR Headset"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center">

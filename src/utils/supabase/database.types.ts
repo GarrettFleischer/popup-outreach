@@ -57,8 +57,15 @@ export type Database = {
           archived: boolean
           created_at: string | null
           created_by: string | null
+          custom_description: string | null
+          custom_subtitle: string | null
+          custom_title: string | null
           date: string
           description: string | null
+          gradient_from_color: string | null
+          gradient_through_color: string | null
+          gradient_to_color: string | null
+          grand_prize: string | null
           id: string
           name: string
           updated_at: string | null
@@ -68,8 +75,15 @@ export type Database = {
           archived?: boolean
           created_at?: string | null
           created_by?: string | null
+          custom_description?: string | null
+          custom_subtitle?: string | null
+          custom_title?: string | null
           date: string
           description?: string | null
+          gradient_from_color?: string | null
+          gradient_through_color?: string | null
+          gradient_to_color?: string | null
+          grand_prize?: string | null
           id?: string
           name: string
           updated_at?: string | null
@@ -79,8 +93,15 @@ export type Database = {
           archived?: boolean
           created_at?: string | null
           created_by?: string | null
+          custom_description?: string | null
+          custom_subtitle?: string | null
+          custom_title?: string | null
           date?: string
           description?: string | null
+          gradient_from_color?: string | null
+          gradient_through_color?: string | null
+          gradient_to_color?: string | null
+          grand_prize?: string | null
           id?: string
           name?: string
           updated_at?: string | null

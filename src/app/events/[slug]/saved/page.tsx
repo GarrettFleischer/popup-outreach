@@ -103,7 +103,12 @@ export default function EventSavedPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-400 via-orange-500 to-red-600 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: "linear-gradient(to bottom, #f97316, #ea580c, #dc2626)",
+        }}
+      >
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
       </div>
     );
@@ -111,7 +116,12 @@ export default function EventSavedPage() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-400 via-orange-500 to-red-600 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: "linear-gradient(to bottom, #f97316, #ea580c, #dc2626)",
+        }}
+      >
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">
             Event Not Found
@@ -129,7 +139,12 @@ export default function EventSavedPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-400 via-orange-500 to-red-600 flex items-center justify-center p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          background: "linear-gradient(to bottom, #f97316, #ea580c, #dc2626)",
+        }}
+      >
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-orange-200 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -178,7 +193,16 @@ export default function EventSavedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-400 via-orange-500 to-red-600 flex items-center justify-center p-4 relative">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        background: `linear-gradient(to bottom, ${
+          event.gradient_from_color || "#f97316"
+        }, ${event.gradient_through_color || "#ea580c"}, ${
+          event.gradient_to_color || "#dc2626"
+        })`,
+      }}
+    >
       {/* Navigation Links */}
       <div className="absolute top-4 right-4 flex gap-3">
         <Link
