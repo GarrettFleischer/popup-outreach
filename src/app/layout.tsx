@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Popup Outreach",
-  description: "Robinhood Park VR Headset Giveaway",
+  title: "Reno Revival Ministries",
+  description: "Outreach Events",
 };
 
 export default function RootLayout({
