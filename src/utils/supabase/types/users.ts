@@ -8,7 +8,7 @@ export type ProfilePermissions =
 // Combined type that includes both profile data and permissions
 export interface ProfileWithPermissions extends Profile {
   profile_permissions: {
-    permission: number;
+    permission_level: number;
   } | null;
 }
 
@@ -38,12 +38,12 @@ export function getProfileFullName(
 /**
  * Gets the permission level for a user profile.
  * @param profile The profile with permissions.
- * @returns The permission level as a number, or 9 (lowest permissions) if no permissions found.
+ * @returns The permission level as a number, or 1 (lowest permissions) if no permissions found.
  */
 export function getUserPermissionLevel(
   profile: ProfileWithPermissions | null | undefined
 ): number {
-  return profile?.profile_permissions?.permission ?? 1;
+  return profile?.profile_permissions?.permission_level ?? 1;
 }
 
 /**

@@ -54,18 +54,29 @@ const fetchProfile = async (
         `
         *,
         profile_permissions (
-          permission
+          permission_level
         )
       `
       )
-      .eq("id", userId)
+      .eq("user_id", userId)
       .single();
 
     if (error) {
       return { profile: null, error };
     }
 
-    return { profile: data as ProfileWithPermissions, error: null };
+    // Transform the data to match our ProfileWithPermissions interface
+    const profile: ProfileWithPermissions = {
+      ...data,
+      profile_permissions:
+        data.profile_permissions &&
+        Array.isArray(data.profile_permissions) &&
+        data.profile_permissions.length > 0
+          ? { permission_level: data.profile_permissions[0].permission_level }
+          : null,
+    };
+
+    return { profile, error: null };
   } catch (error) {
     return { profile: null, error: error as PostgrestError };
   }
@@ -145,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch the complete profile with permissions after update
       const { profile: completeProfile, error: fetchError } =
-        await fetchProfile(profile.id);
+        await fetchProfile(profile.user_id);
       if (fetchError) {
         console.log(JSON.stringify(fetchError));
         return { error: fetchError.message };
