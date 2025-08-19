@@ -139,22 +139,22 @@ export default function EventRegisterPage() {
             </h3>
             <p className="text-gray-600 mb-6">
               You have successfully registered for &ldquo;{event.name}&rdquo;.
-              We&apos;ll send you a confirmation email shortly.
             </p>
             <div className="space-y-3">
-              <Link href={`/events/${event.url_slug}`}>
-                <Button
-                  variant="primary"
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                >
-                  Back to Event
-                </Button>
-              </Link>
-              <Link href="/events">
-                <Button variant="outline" className="w-full">
-                  View All Events
-                </Button>
-              </Link>
+              <Button
+                onClick={() => {
+                  setSuccess(false);
+                  setFormData({
+                    first_name: "",
+                    last_name: "",
+                    phone: "",
+                  });
+                }}
+                variant="primary"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>
@@ -171,12 +171,6 @@ export default function EventRegisterPage() {
           className="text-white/70 hover:text-white text-xs font-medium transition-colors"
         >
           back to event
-        </Link>
-        <Link
-          href="/events"
-          className="text-white/70 hover:text-white text-xs font-medium transition-colors"
-        >
-          all events
         </Link>
       </div>
 
@@ -208,7 +202,7 @@ export default function EventRegisterPage() {
             <div>
               <label
                 htmlFor="first_name"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 First Name
               </label>
@@ -221,7 +215,7 @@ export default function EventRegisterPage() {
                 required
                 aria-required="true"
                 aria-describedby="first-name-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your first name"
               />
               <div id="first-name-help" className="sr-only">
@@ -232,7 +226,7 @@ export default function EventRegisterPage() {
             <div>
               <label
                 htmlFor="last_name"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 Last Name
               </label>
@@ -245,7 +239,7 @@ export default function EventRegisterPage() {
                 required
                 aria-required="true"
                 aria-describedby="last-name-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your last name"
               />
               <div id="last-name-help" className="sr-only">
@@ -257,7 +251,7 @@ export default function EventRegisterPage() {
             <div>
               <label
                 htmlFor="phone"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 Phone Number
               </label>
@@ -270,7 +264,7 @@ export default function EventRegisterPage() {
                 required
                 aria-required="true"
                 aria-describedby="phone-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your phone number"
               />
               <div id="phone-help" className="sr-only">
@@ -282,15 +276,15 @@ export default function EventRegisterPage() {
             {/* Prizes Section */}
             <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-4">
               <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
                   GIVEAWAYS
                 </h3>
-                <p className="text-lg font-bold text-gray-700 mb-2">
+                <p className="text-lg font-bold text-gray-800 mb-2">
                   CASH PRIZES & GIFT CARDS
                 </p>
                 <div className="relative inline-block">
                   <div className="bg-white border-2 border-white rounded-full px-6 py-2">
-                    <span className="text-lg font-bold text-gray-800">
+                    <span className="text-lg font-bold text-gray-900">
                       VR HEADSET
                     </span>
                   </div>

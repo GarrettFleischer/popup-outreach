@@ -54,6 +54,7 @@ export type Database = {
       }
       events: {
         Row: {
+          archived: boolean
           created_at: string | null
           created_by: string | null
           date: string
@@ -64,6 +65,7 @@ export type Database = {
           url_slug: string
         }
         Insert: {
+          archived?: boolean
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -74,6 +76,7 @@ export type Database = {
           url_slug: string
         }
         Update: {
+          archived?: boolean
           created_at?: string | null
           created_by?: string | null
           date?: string

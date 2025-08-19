@@ -142,19 +142,22 @@ export default function EventSavedPage() {
               We&apos;ll be in touch soon to help you on your journey!
             </p>
             <div className="space-y-3">
-              <Link href={`/events/${event.url_slug}`}>
-                <Button
-                  variant="primary"
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                >
-                  Back to Event
-                </Button>
-              </Link>
-              <Link href="/events">
-                <Button variant="outline" className="w-full">
-                  View All Events
-                </Button>
-              </Link>
+              <Button
+                onClick={() => {
+                  setSuccess(false);
+                  setFormData({
+                    first_name: "",
+                    last_name: "",
+                    phone: "",
+                    email: "",
+                    needsRide: false,
+                  });
+                }}
+                variant="primary"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>
@@ -171,12 +174,6 @@ export default function EventSavedPage() {
           className="text-white/70 hover:text-white text-xs font-medium transition-colors"
         >
           back to event
-        </Link>
-        <Link
-          href="/events"
-          className="text-white/70 hover:text-white text-xs font-medium transition-colors"
-        >
-          all events
         </Link>
       </div>
 
@@ -200,7 +197,7 @@ export default function EventSavedPage() {
             <div>
               <label
                 htmlFor="first_name"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 First Name
               </label>
@@ -213,7 +210,7 @@ export default function EventSavedPage() {
                 required
                 aria-required="true"
                 aria-describedby="saved-first-name-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your first name"
               />
               <div id="saved-first-name-help" className="sr-only">
@@ -225,7 +222,7 @@ export default function EventSavedPage() {
             <div>
               <label
                 htmlFor="last_name"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 Last Name
               </label>
@@ -238,7 +235,7 @@ export default function EventSavedPage() {
                 required
                 aria-required="true"
                 aria-describedby="saved-last-name-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your last name"
               />
               <div id="saved-last-name-help" className="sr-only">
@@ -251,7 +248,7 @@ export default function EventSavedPage() {
             <div>
               <label
                 htmlFor="phone"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 Phone Number
               </label>
@@ -264,7 +261,7 @@ export default function EventSavedPage() {
                 required
                 aria-required="true"
                 aria-describedby="saved-phone-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your phone number"
               />
               <div id="saved-phone-help" className="sr-only">
@@ -277,10 +274,10 @@ export default function EventSavedPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-bold text-gray-800 mb-2"
+                className="block text-sm font-bold text-gray-900 mb-2"
               >
                 Email Address{" "}
-                <span className="text-gray-500 font-normal">(Optional)</span>
+                <span className="text-gray-600 font-normal">(Optional)</span>
               </label>
               <input
                 type="email"
@@ -289,7 +286,7 @@ export default function EventSavedPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 aria-describedby="saved-email-help"
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
                 placeholder="Enter your email address (optional)"
               />
               <div id="saved-email-help" className="sr-only">
@@ -315,11 +312,11 @@ export default function EventSavedPage() {
                 <div className="ml-3">
                   <label
                     htmlFor="needsRide"
-                    className="text-sm font-bold text-blue-800"
+                    className="text-sm font-bold text-blue-900"
                   >
                     I need a ride with the free bus ministry
                   </label>
-                  <p className="text-xs text-blue-700 mt-1" id="bus-help">
+                  <p className="text-xs text-blue-800 mt-1" id="bus-help">
                     Check this if you need transportation to and from church
                   </p>
                 </div>
@@ -344,16 +341,16 @@ export default function EventSavedPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-green-800 mb-2">
+                <h3 className="text-lg font-bold text-green-900 mb-2">
                   Welcome to God&apos;s Family!
                 </h3>
-                <p className="text-sm text-green-700 mb-3">
+                <p className="text-sm text-green-800 mb-3">
                   We&apos;re excited to walk alongside you in your new faith
                   journey. Our team will reach out to provide support,
                   resources, and guidance.
                 </p>
                 <div className="bg-green-100 rounded-lg p-3 border border-green-200">
-                  <p className="text-xs text-green-800 font-medium">
+                  <p className="text-xs text-green-900 font-medium">
                     🔒 We will never spam you or send junk mail.
                   </p>
                 </div>

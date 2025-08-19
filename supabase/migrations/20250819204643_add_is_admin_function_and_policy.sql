@@ -10,7 +10,7 @@ BEGIN
     -- Use a direct query with SECURITY DEFINER to bypass RLS
     RETURN EXISTS (
         SELECT 1 FROM public.profile_permissions 
-        WHERE id = auth.uid() AND permission_level = 0
+        WHERE user_id = auth.uid() AND permission_level = 0
     );
 END;
 $$;
