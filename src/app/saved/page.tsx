@@ -3,19 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function Home() {
+export default function SavedPage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
+    needsRide: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -32,7 +34,7 @@ export default function Home() {
     // Reset form after showing success
     setTimeout(() => {
       setSubmitSuccess(false);
-      setFormData({ name: "", phone: "" });
+      setFormData({ name: "", phone: "", email: "", needsRide: false });
     }, 3000);
   };
 
@@ -58,19 +60,11 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">
-            FREE EVENT
+            JUST SAVED?
           </h1>
           <div className="text-center mb-4">
-            <p
-              className="text-3xl font-bold text-black mb-2 drop-shadow-lg"
-              style={{
-                textShadow: "2px 2px 0px #ff0000, -2px -2px 0px #00ffff",
-              }}
-            >
-              YOU&apos;RE INVITED
-            </p>
-            <p className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
-              Register To Win An Oculus Quest VR Headset Grand Prize
+            <p className="text-2xl font-bold text-white mb-2">
+              WELCOME TO THE FAMILY!
             </p>
           </div>
         </div>
@@ -95,10 +89,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Registration Successful!
+                Thank You!
               </h3>
               <p className="text-gray-600">
-                Thank you for registering. We&apos;ll be in touch soon!
+                We&apos;ll be in touch soon to help you on your journey!
               </p>
             </div>
           ) : (
@@ -119,12 +113,13 @@ export default function Home() {
                   onChange={handleInputChange}
                   required
                   aria-required="true"
-                  aria-describedby="name-help"
+                  aria-describedby="saved-name-help"
                   className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
                   placeholder="Enter your full name"
                 />
-                <div id="name-help" className="sr-only">
-                  Enter your full legal name as it appears on official documents
+                <div id="saved-name-help" className="sr-only">
+                  Enter your full legal name so we can provide spiritual support
+                  and guidance
                 </div>
               </div>
 
@@ -144,47 +139,76 @@ export default function Home() {
                   onChange={handleInputChange}
                   required
                   aria-required="true"
-                  aria-describedby="phone-help"
+                  aria-describedby="saved-phone-help"
                   className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
                   placeholder="Enter your phone number"
                 />
-                <div id="phone-help" className="sr-only">
-                  Enter your phone number so we can contact you about the event
-                  and prizes
+                <div id="saved-phone-help" className="sr-only">
+                  Enter your phone number so we can reach out to provide
+                  spiritual support and guidance
                 </div>
               </div>
 
-              {/* Prizes Section */}
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">
-                    GIVEAWAYS
-                  </h3>
-                  <p className="text-lg font-bold text-gray-700 mb-2">
-                    CASH PRIZES & GIFT CARDS
-                  </p>
-                  <div className="relative inline-block">
-                    <div className="bg-white border-2 border-white rounded-full px-6 py-2">
-                      <span className="text-lg font-bold text-gray-800">
-                        VR HEADSET
-                      </span>
-                    </div>
-                    <div className="absolute top-1/2 -translate-y-1/2 -left-4 text-yellow-500 text-2xl">
-                      →
-                    </div>
-                    <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-yellow-500 text-2xl">
-                      ←
-                    </div>
+              {/* Email Field */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-bold text-gray-800 mb-2"
+                >
+                  Email Address{" "}
+                  <span className="text-gray-500 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  aria-describedby="saved-email-help"
+                  className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium"
+                  placeholder="Enter your email address (optional)"
+                />
+                <div id="saved-email-help" className="sr-only">
+                  Optional email address for additional ways to stay connected
+                  and receive spiritual resources
+                </div>
+              </div>
+
+              {/* Bus Ministry Checkbox */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="needsRide"
+                      name="needsRide"
+                      type="checkbox"
+                      checked={formData.needsRide}
+                      onChange={handleInputChange}
+                      aria-describedby="bus-help"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <label
+                      htmlFor="needsRide"
+                      className="text-sm font-bold text-blue-800"
+                    >
+                      I need a ride with the free bus ministry
+                    </label>
+                    <p className="text-xs text-blue-700 mt-1" id="bus-help">
+                      Check this if you need transportation to and from the
+                      event
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Age Disclaimer */}
-              <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
+              {/* Christian Outreach Message */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg
-                      className="w-5 h-5 text-amber-600 mt-0.5"
+                      className="w-6 h-6 text-green-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -193,14 +217,23 @@ export default function Home() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                       />
                     </svg>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-amber-800 font-medium">
-                      <strong>Important:</strong> You must be 18 years or older
-                      to register and be eligible for the main prize.
+                  <h3 className="text-lg font-bold text-green-800 mb-2">
+                    Welcome to God&apos;s Family!
+                  </h3>
+                  <p className="text-sm text-green-700 mb-3">
+                    We&apos;re excited to walk alongside you in your new faith
+                    journey. Our team will reach out to provide support,
+                    resources, and guidance.
+                  </p>
+                  <div className="bg-green-100 rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-green-800 font-medium">
+                      🔒 We will never spam you or send junk mail. Your
+                      information is safe and will only be used to provide
+                      support.
                     </p>
                   </div>
                 </div>
@@ -212,11 +245,11 @@ export default function Home() {
                 disabled={isSubmitting}
                 aria-label={
                   isSubmitting
-                    ? "Processing registration, please wait"
-                    : "Submit registration form to enter for VR headset prize"
+                    ? "Processing submission, please wait"
+                    : "Submit form to connect with our spiritual support team"
                 }
-                aria-describedby="submit-help"
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 focus:ring-4 focus:ring-orange-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                aria-describedby="saved-submit-help"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-lg hover:from-green-700 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
@@ -243,22 +276,15 @@ export default function Home() {
                     Processing...
                   </div>
                 ) : (
-                  "REGISTER NOW"
+                  "SUBMIT & CONNECT"
                 )}
               </button>
-              <div id="submit-help" className="sr-only">
-                Click to submit your registration and enter for the Oculus Quest
-                VR Headset grand prize
+              <div id="saved-submit-help" className="sr-only">
+                Click to submit your information and connect with our team for
+                spiritual support and guidance
               </div>
             </form>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-white font-medium drop-shadow-md">
-            By registering, you agree to our terms and conditions
-          </p>
         </div>
       </div>
     </div>
