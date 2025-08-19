@@ -23,13 +23,14 @@ export function ColorPicker({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+          className="w-12 h-12 border border-gray-300 rounded cursor-pointer min-w-[48px]"
+          style={{ backgroundColor: value }}
         />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white font-mono text-sm"
+          className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white font-mono text-sm"
           placeholder={placeholder}
         />
       </div>
