@@ -131,16 +131,6 @@ export default function EditEventPage() {
     }
   };
 
-  // Function to check if a saved submission matches an attendee
-  const isMatched = (saved: SavedSubmission, attendees: Attendee[]) => {
-    return attendees.some(
-      (attendee) =>
-        (attendee.first_name.toLowerCase() === saved.first_name.toLowerCase() &&
-          attendee.last_name.toLowerCase() === saved.last_name.toLowerCase()) ||
-        attendee.phone === saved.phone
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -378,23 +368,39 @@ export default function EditEventPage() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {attendees.map((attendee) => (
-                    <div key={attendee.id} className="px-6 py-3">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {attendee.first_name} {attendee.last_name}
-                          </p>
+                  {attendees.map((attendee) => {
+                    // Check if this attendee has a matching saved submission
+                    const hasMatchingSaved = savedSubmissions.some(
+                      (saved) => saved.phone === attendee.phone
+                    );
+
+                    return (
+                      <div key={attendee.id} className="px-6 py-3">
+                        <div className="grid grid-cols-3 gap-4 items-center">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {attendee.first_name} {attendee.last_name}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-sm text-gray-600 font-mono">
+                              {attendee.phone.replace(
+                                /(\d{3})(\d{3})(\d{4})/,
+                                "($1) $2-$3"
+                              )}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            {hasMatchingSaved && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Saved
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-600 font-mono">
-                          {attendee.phone.replace(
-                            /(\d{3})(\d{3})(\d{4})/,
-                            "($1) $2-$3"
-                          )}
-                        </span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -418,45 +424,37 @@ export default function EditEventPage() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {savedSubmissions.map((saved) => {
-                    const isMatchedWithAttendee = isMatched(saved, attendees);
-                    return (
-                      <div
-                        key={saved.id}
-                        className={`px-6 py-3 ${
-                          isMatchedWithAttendee
-                            ? "bg-green-50 border-l-4 border-l-green-400"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {saved.first_name} {saved.last_name}
+                  {savedSubmissions.map((saved) => (
+                    <div key={saved.id} className="px-6 py-3">
+                      <div className="grid grid-cols-3 gap-4 items-center">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {saved.first_name} {saved.last_name}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-sm text-gray-600 font-mono block mb-1">
+                            {saved.phone.replace(
+                              /(\d{3})(\d{3})(\d{4})/,
+                              "($1) $2-$3"
+                            )}
+                          </span>
+                          {saved.email && (
+                            <p className="text-sm text-gray-600">
+                              {saved.email}
                             </p>
-                            {saved.email && (
-                              <p className="text-sm text-gray-600">
-                                {saved.email}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm text-gray-600 font-mono block mb-1">
-                              {saved.phone.replace(
-                                /(\d{3})(\d{3})(\d{4})/,
-                                "($1) $2-$3"
-                              )}
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {saved.needs_ride && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                              🚗 Needs Ride
                             </span>
-                            {isMatchedWithAttendee && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Matched
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
