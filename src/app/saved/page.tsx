@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export default function SavedPage() {
   const [formData, setFormData] = useState({
@@ -240,16 +241,18 @@ export default function SavedPage() {
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting}
+                variant="success"
+                size="xl"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 aria-label={
                   isSubmitting
                     ? "Processing submission, please wait"
                     : "Submit form to connect with our spiritual support team"
                 }
                 aria-describedby="saved-submit-help"
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-lg hover:from-green-700 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
@@ -278,7 +281,7 @@ export default function SavedPage() {
                 ) : (
                   "SUBMIT & CONNECT"
                 )}
-              </button>
+              </Button>
               <div id="saved-submit-help" className="sr-only">
                 Click to submit your information and connect with our team for
                 spiritual support and guidance

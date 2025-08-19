@@ -35,21 +35,58 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: DO NOT REMOVE auth.getUser()
 
-  // const {
-  //   data: { user },
-  // } =
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // if (
-  //   !user &&
-  //   !request.nextUrl.pathname.startsWith("/login") &&
-  //   !request.nextUrl.pathname.startsWith("/auth")
-  // ) {
-  // no user, potentially respond by redirecting the user to the login page
-  // const url = request.nextUrl.clone();
-  // url.pathname = "/login";
-  // return NextResponse.redirect(url);
-  // }
+  // Handle admin route access control
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    // If not authenticated, redirect to login
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/login";
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user has admin permissions (level 0)
+    // We need to fetch the user's profile and permissions from the database
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select(
+        `
+        *,
+        profile_permissions (
+          permission_level
+        )
+      `
+      )
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profileData || !profileData.profile_permissions) {
+      // If we can't fetch permissions, redirect to not-authorized
+      const url = request.nextUrl.clone();
+      url.pathname = "/not-authorized";
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user has admin permissions (level 0)
+    if (profileData.profile_permissions.permission_level !== 0) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/not-authorized";
+      return NextResponse.redirect(url);
+    }
+
+    // User has admin permissions, allow access
+    return supabaseResponse;
+  }
+
+  // Redirect authenticated users away from auth pages to admin dashboard
+  if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin/dashboard";
+    return NextResponse.redirect(url);
+  }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

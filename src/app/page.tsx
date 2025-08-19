@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -207,16 +208,18 @@ export default function Home() {
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting}
+                variant="primary"
+                size="xl"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 aria-label={
                   isSubmitting
                     ? "Processing registration, please wait"
                     : "Submit registration form to enter for VR headset prize"
                 }
                 aria-describedby="submit-help"
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 focus:ring-4 focus:ring-orange-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
@@ -245,7 +248,7 @@ export default function Home() {
                 ) : (
                   "REGISTER NOW"
                 )}
-              </button>
+              </Button>
               <div id="submit-help" className="sr-only">
                 Click to submit your registration and enter for the Oculus Quest
                 VR Headset grand prize
