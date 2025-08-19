@@ -121,7 +121,8 @@ export default function EditEventPage() {
       });
 
       alert("Event updated successfully!");
-      router.push("/admin/dashboard");
+      // Reload the event data to reflect changes
+      await loadEvent();
     } catch (error) {
       console.error("Error updating event:", error);
       alert("Failed to update event. Please try again.");

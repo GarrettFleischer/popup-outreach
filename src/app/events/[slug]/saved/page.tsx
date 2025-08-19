@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/Button";
-import { Event } from "@/utils/supabase/types";
+import { Event, SavedForm } from "@/utils/supabase/types";
 
 export default function EventSavedPage() {
   const params = useParams();
@@ -16,12 +16,12 @@ export default function EventSavedPage() {
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SavedForm>({
     first_name: "",
     last_name: "",
     phone: "",
     email: "",
-    needsRide: false,
+    needs_ride: false,
   });
 
   // Fetch event details on mount
@@ -43,6 +43,11 @@ export default function EventSavedPage() {
             router.push("/events");
           }
         } else {
+          // Check if event is archived
+          if (data.archived) {
+            router.push("/events");
+            return;
+          }
           setEvent(data);
         }
       } catch (error) {
@@ -66,6 +71,13 @@ export default function EventSavedPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!event) return;
+
+    // Prevent submission for archived events
+    if (event.archived) {
+      alert("This event is no longer available.");
+      router.push("/events");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -150,7 +162,7 @@ export default function EventSavedPage() {
                     last_name: "",
                     phone: "",
                     email: "",
-                    needsRide: false,
+                    needs_ride: false,
                   });
                 }}
                 variant="primary"
@@ -300,10 +312,10 @@ export default function EventSavedPage() {
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
-                    id="needsRide"
-                    name="needsRide"
+                    id="needs_ride"
+                    name="needs_ride"
                     type="checkbox"
-                    checked={formData.needsRide}
+                    checked={formData.needs_ride}
                     onChange={handleInputChange}
                     aria-describedby="bus-help"
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
@@ -311,7 +323,7 @@ export default function EventSavedPage() {
                 </div>
                 <div className="ml-3">
                   <label
-                    htmlFor="needsRide"
+                    htmlFor="needs_ride"
                     className="text-sm font-bold text-blue-900"
                   >
                     I need a ride with the free bus ministry

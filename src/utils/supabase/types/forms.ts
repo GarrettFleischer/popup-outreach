@@ -5,6 +5,15 @@ export interface RegistrationForm {
   phone: string;
 }
 
+// Saved form for people who have been saved/come to faith
+export interface SavedForm {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  needs_ride: boolean;
+}
+
 // Login form
 export interface LoginForm {
   email: string;

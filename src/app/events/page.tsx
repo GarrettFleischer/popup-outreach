@@ -16,6 +16,7 @@ export default function EventsPage() {
         const { data, error } = await supabase
           .from("events")
           .select("*")
+          .eq("archived", false)
           .order("date", { ascending: false });
 
         if (error) {

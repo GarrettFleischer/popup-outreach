@@ -163,6 +163,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          needs_ride: boolean | null
           phone: string
           updated_at: string | null
         }
@@ -173,6 +174,7 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          needs_ride?: boolean | null
           phone: string
           updated_at?: string | null
         }
@@ -183,6 +185,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          needs_ride?: boolean | null
           phone?: string
           updated_at?: string | null
         }

@@ -40,6 +40,11 @@ export default function EventRegisterPage() {
             router.push("/events");
           }
         } else {
+          // Check if event is archived
+          if (data.archived) {
+            router.push("/events");
+            return;
+          }
           setEvent(data);
         }
       } catch (error) {
@@ -65,6 +70,13 @@ export default function EventRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!event) return;
+
+    // Prevent registration for archived events
+    if (event.archived) {
+      alert("This event is no longer available for registration.");
+      router.push("/events");
+      return;
+    }
 
     setSubmitting(true);
 
