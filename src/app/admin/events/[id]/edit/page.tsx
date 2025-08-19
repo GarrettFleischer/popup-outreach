@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import {
@@ -8,7 +8,6 @@ import {
   getEventAttendees,
   getEventSavedSubmissions,
   updateEvent,
-  archiveEvent,
   type EventWithStats,
   type Attendee,
   type SavedSubmission,
@@ -35,13 +34,24 @@ export default function EditEventPage() {
     archived: false,
   });
 
-  useEffect(() => {
-    if (eventId) {
-      loadEvent();
+  const loadEventData = useCallback(async () => {
+    setIsLoadingData(true);
+    try {
+      const [attendeesData, savedData] = await Promise.all([
+        getEventAttendees(eventId),
+        getEventSavedSubmissions(eventId),
+      ]);
+
+      setAttendees(attendeesData);
+      setSavedSubmissions(savedData);
+    } catch (error) {
+      console.error("Error loading event data:", error);
+    } finally {
+      setIsLoadingData(false);
     }
   }, [eventId]);
 
-  const loadEvent = async () => {
+  const loadEvent = useCallback(async () => {
     setIsLoading(true);
     try {
       const eventsData = await getEventsWithStats(true); // Include archived events
@@ -81,24 +91,13 @@ export default function EditEventPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [eventId, router, loadEventData]);
 
-  const loadEventData = async () => {
-    setIsLoadingData(true);
-    try {
-      const [attendeesData, savedData] = await Promise.all([
-        getEventAttendees(eventId),
-        getEventSavedSubmissions(eventId),
-      ]);
-
-      setAttendees(attendeesData);
-      setSavedSubmissions(savedData);
-    } catch (error) {
-      console.error("Error loading event data:", error);
-    } finally {
-      setIsLoadingData(false);
+  useEffect(() => {
+    if (eventId) {
+      loadEvent();
     }
-  };
+  }, [eventId, loadEvent]);
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();

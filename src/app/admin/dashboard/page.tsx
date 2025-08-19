@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -33,11 +33,7 @@ export default function AdminDashboard() {
   });
   const supabase = createClient();
 
-  useEffect(() => {
-    loadEvents();
-  }, [showArchived]);
-
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     setIsLoading(true);
     try {
       const eventsData = await getEventsWithStats(showArchived);
@@ -47,7 +43,11 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showArchived]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
