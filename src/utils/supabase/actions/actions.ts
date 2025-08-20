@@ -614,6 +614,7 @@ export async function bulkAssignLeads(
 ): Promise<void> {
   const supabase = createClient();
 
+  // RLS policies will automatically ensure users can only update leads they have access to
   const { error } = await supabase
     .from("leads")
     .update({ assigned_user_id: assignedUserId })

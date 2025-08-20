@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { LeadsTable } from "@/components/LeadsTable";
 import { LeadDialog, type LeadFormData } from "@/components/LeadDialog";
+import { isSuperAdmin } from "@/utils/supabase/types/users";
 
 import {
   getAllLeads,
@@ -64,6 +65,7 @@ export default function LeadsManagement() {
 
   const loadLeads = async () => {
     try {
+      // RLS policies now handle permission-based filtering at the database level
       const allLeads = await getAllLeads();
       setLeads(allLeads);
     } catch (error) {
@@ -82,14 +84,19 @@ export default function LeadsManagement() {
     }
   };
 
-  // Filter leads based on checkbox states
+  // Filter leads based on checkbox states and user permissions
   const filteredLeads = leads.filter((lead) => {
+    // Always apply contacted filter
     if (hideContacted && lead.contacted) {
       return false;
     }
-    if (hideAssigned && lead.assigned_user_id) {
+
+    // Only apply assigned filter for super admins (level 0)
+    // Level 1 users (lead managers) only see their own leads, so this filter doesn't make sense
+    if (isSuperAdmin(user?.profile) && hideAssigned && lead.assigned_user_id) {
       return false;
     }
+
     return true;
   });
 
@@ -189,9 +196,12 @@ export default function LeadsManagement() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="primary" onClick={handleCreateLead}>
-            Create Lead
-          </Button>
+          {/* Only show create button for super admins (level 0) */}
+          {isSuperAdmin(user?.profile) && (
+            <Button variant="primary" onClick={handleCreateLead}>
+              Create Lead
+            </Button>
+          )}
         </div>
       </div>
 
@@ -208,15 +218,18 @@ export default function LeadsManagement() {
             />
             <span className="text-sm text-gray-700">Hide contacted leads</span>
           </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={hideAssigned}
-              onChange={(e) => setHideAssigned(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="text-sm text-gray-700">Hide assigned leads</span>
-          </label>
+          {/* Only show "Hide assigned leads" filter for super admins (level 0) */}
+          {isSuperAdmin(user?.profile) && (
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={hideAssigned}
+                onChange={(e) => setHideAssigned(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="text-sm text-gray-700">Hide assigned leads</span>
+            </label>
+          )}
           <div className="text-sm text-gray-500">
             Showing {filteredLeads.length} of {leads.length} leads
           </div>

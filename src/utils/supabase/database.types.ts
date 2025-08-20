@@ -295,7 +295,15 @@ export type Database = {
         Args: { event_date: string; event_name: string }
         Returns: string
       }
+      has_admin_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_lead_manager: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

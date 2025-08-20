@@ -68,12 +68,13 @@ const fetchProfile = async (
     // Transform the data to match our ProfileWithPermissions interface
     const profile: ProfileWithPermissions = {
       ...data,
-      profile_permissions:
-        data.profile_permissions &&
-        Array.isArray(data.profile_permissions) &&
-        data.profile_permissions.length > 0
-          ? { permission_level: data.profile_permissions[0].permission_level }
-          : null,
+      profile_permissions: data.profile_permissions
+        ? Array.isArray(data.profile_permissions)
+          ? data.profile_permissions.length > 0
+            ? { permission_level: data.profile_permissions[0].permission_level }
+            : null
+          : { permission_level: data.profile_permissions.permission_level }
+        : null,
     };
 
     return { profile, error: null };

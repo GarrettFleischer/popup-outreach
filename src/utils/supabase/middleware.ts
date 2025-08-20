@@ -70,8 +70,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Check if user has admin permissions (level 0)
-    if (profileData.profile_permissions.permission_level !== 0) {
+    // Check if user has admin access (level 0 or 1)
+    if (profileData.profile_permissions.permission_level > 1) {
       const url = request.nextUrl.clone();
       url.pathname = "/not-authorized";
       return NextResponse.redirect(url);

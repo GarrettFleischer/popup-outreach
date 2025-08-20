@@ -38,17 +38,17 @@ export function getProfileFullName(
 /**
  * Gets the permission level for a user profile.
  * @param profile The profile with permissions.
- * @returns The permission level as a number, or 1 (lowest permissions) if no permissions found.
+ * @returns The permission level as a number, or 2 (lowest permissions) if no permissions found.
  */
 export function getUserPermissionLevel(
   profile: ProfileWithPermissions | null | undefined
 ): number {
-  return profile?.profile_permissions?.permission_level ?? 1;
+  return profile?.profile_permissions?.permission_level ?? 2;
 }
 
 /**
  * Checks if a user has at least the specified permission level.
- * Note: Lower numbers = higher permissions (0 = Owner, 9 = Contractor)
+ * Note: Lower numbers = higher permissions (0 = Super Admin, 1 = Lead Manager, 2 = Regular User)
  * @param profile The profile with permissions.
  * @param requiredLevel The maximum permission level allowed (user must have this level or lower number).
  * @returns True if the user has sufficient permissions, false otherwise.
@@ -63,6 +63,35 @@ export function hasMinimumPermission(
 }
 
 export enum UserRole {
-  Administrator = "Administrator",
-  User = "User",
+  SuperAdmin = "SuperAdmin",
+  LeadManager = "LeadManager",
+  RegularUser = "RegularUser",
+}
+
+/**
+ * Checks if a user is a super admin (permission level 0)
+ */
+export function isSuperAdmin(
+  profile: ProfileWithPermissions | null | undefined
+): boolean {
+  return profile?.profile_permissions?.permission_level === 0;
+}
+
+/**
+ * Checks if a user is a lead manager (permission level 1)
+ */
+export function isLeadManager(
+  profile: ProfileWithPermissions | null | undefined
+): boolean {
+  return profile?.profile_permissions?.permission_level === 1;
+}
+
+/**
+ * Checks if a user has admin access (permission level 0 or 1)
+ */
+export function hasAdminAccess(
+  profile: ProfileWithPermissions | null | undefined
+): boolean {
+  const level = profile?.profile_permissions?.permission_level;
+  return level === 0 || level === 1;
 }

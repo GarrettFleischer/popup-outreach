@@ -1,5 +1,7 @@
 import React from "react";
 import { Tables } from "@/utils/supabase/database.types";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdmin } from "@/utils/supabase/types/users";
 
 type LeadWithEventInfo = Tables<"leads"> & {
   saved?: {
@@ -37,6 +39,7 @@ export function LeadsTable({
   onBulkAssign,
   profiles,
 }: LeadsTableProps) {
+  const { user } = useAuth();
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -65,8 +68,8 @@ export function LeadsTable({
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      {/* Bulk Actions Header */}
-      {selectedLeads.length > 0 && (
+      {/* Bulk Actions Header - Only show for super admins (level 0) */}
+      {selectedLeads.length > 0 && isSuperAdmin(user?.profile) && (
         <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -126,17 +129,20 @@ export function LeadsTable({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={(input) => {
-                    if (input) input.indeterminate = someSelected;
-                  }}
-                  onChange={(e) => onSelectAll(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-              </th>
+              {/* Only show checkbox column for super admins (level 0) */}
+              {isSuperAdmin(user?.profile) && (
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => onSelectAll(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Lead
               </th>
@@ -157,15 +163,18 @@ export function LeadsTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.map((lead) => (
               <tr key={lead.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedLeads.includes(lead.id)}
-                    onChange={(e) => onSelectLead(lead.id, e.target.checked)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </td>
+                {/* Only show checkbox for super admins (level 0) */}
+                {isSuperAdmin(user?.profile) && (
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedLeads.includes(lead.id)}
+                      onChange={(e) => onSelectLead(lead.id, e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </td>
+                )}
                 <td
                   className="px-6 py-4 whitespace-nowrap cursor-pointer"
                   onClick={() => onEditLead?.(lead)}
