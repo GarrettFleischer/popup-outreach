@@ -1,9 +1,21 @@
 import React from "react";
-import { Lead } from "@/utils/supabase/actions/actions";
+import { Tables } from "@/utils/supabase/database.types";
+
+type LeadWithEventInfo = Tables<"leads"> & {
+  saved?: {
+    id: string;
+    event_id: string;
+    events: {
+      id: string;
+      name: string;
+      url_slug: string;
+    };
+  } | null;
+};
 
 interface LeadsTableProps {
-  leads: Lead[];
-  onEditLead?: (lead: Lead) => void;
+  leads: LeadWithEventInfo[];
+  onEditLead?: (lead: LeadWithEventInfo) => void;
 }
 
 export function LeadsTable({ leads, onEditLead }: LeadsTableProps) {
@@ -79,8 +91,10 @@ export function LeadsTable({ leads, onEditLead }: LeadsTableProps) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {lead.saved_id
-                      ? `From Saved: ${lead.saved_id.slice(0, 8)}...`
+                    {lead.saved?.events?.name
+                      ? lead.saved.events.name
+                      : lead.saved_id
+                      ? "From Saved Submission"
                       : "Manual Lead"}
                   </div>
                   <div className="text-sm text-gray-500">

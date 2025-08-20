@@ -1,36 +1,24 @@
-// Temporary leads type definition until database types are updated
-export interface Lead {
-  id: string;
-  event_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  job_title?: string;
-  dietary_restrictions?: string;
-  additional_notes?: string;
-  needs_ride: boolean;
-  assigned_user_id?: string;
-  contacted: boolean;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
+// Lead types that extend the database types
+import { Tables } from "@/utils/supabase/database.types";
+
+export type Lead = Tables<"leads">;
 
 export interface LeadWithEvent extends Lead {
-  event: {
+  saved: {
     id: string;
-    name: string;
-    url_slug: string;
-  };
+    event_id: string;
+    event?: {
+      id: string;
+      name: string;
+      url_slug: string;
+    };
+  } | null;
 }
 
 export interface LeadWithAssignee extends Lead {
-  assignee?: {
+  profiles?: {
     id: string;
     first_name: string;
     last_name: string;
-    email: string;
-  };
+  } | null;
 }

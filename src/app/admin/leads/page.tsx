@@ -11,16 +11,30 @@ import {
   getAllLeads,
   createLead,
   updateLead,
-  type Lead,
 } from "@/utils/supabase/actions/actions";
+import { Tables } from "@/utils/supabase/database.types";
+
+type LeadWithEventInfo = Tables<"leads"> & {
+  saved?: {
+    id: string;
+    event_id: string;
+    events: {
+      id: string;
+      name: string;
+      url_slug: string;
+    };
+  } | null;
+};
 
 export default function LeadsManagement() {
   const { user } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<LeadWithEventInfo[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<LeadWithEventInfo | null>(
+    null
+  );
 
   useEffect(() => {
     if (!user) {
@@ -48,7 +62,7 @@ export default function LeadsManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleEditLead = (lead: Lead) => {
+  const handleEditLead = (lead: LeadWithEventInfo) => {
     setEditingLead(lead);
     setIsDialogOpen(true);
   };

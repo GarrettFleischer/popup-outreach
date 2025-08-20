@@ -45,10 +45,55 @@ export async function getEventsWithStats(
         .eq("event_id", event.id);
 
       // Get lead count for the event through saved submissions
-      const { count: leadCount } = await supabase
-        .from("leads")
-        .select("*, saved!inner(event_id)", { count: "exact", head: true })
-        .eq("saved.event_id", event.id);
+      // This includes both direct leads and leads that would violate constraints
+      const { data: savedSubmissions } = await supabase
+        .from("saved")
+        .select(
+          `
+          id, 
+          first_name, 
+          last_name, 
+          email, 
+          phone,
+          events!inner (
+            id,
+            name,
+            url_slug
+          )
+        `
+        )
+        .eq("event_id", event.id);
+
+      let leadCount = 0;
+      if (savedSubmissions && savedSubmissions.length > 0) {
+        for (const saved of savedSubmissions) {
+          // Check for direct lead reference
+          const { data: directLead } = await supabase
+            .from("leads")
+            .select("id")
+            .eq("saved_id", saved.id)
+            .maybeSingle();
+
+          if (directLead) {
+            leadCount++;
+            continue;
+          }
+
+          // Check for constraint violation (same name/email/phone combination)
+          const { data: constraintLead } = await supabase
+            .from("leads")
+            .select("id")
+            .eq("first_name", saved.first_name)
+            .eq("last_name", saved.last_name)
+            .eq("email", saved.email || "")
+            .eq("phone", saved.phone || "")
+            .maybeSingle();
+
+          if (constraintLead) {
+            leadCount++;
+          }
+        }
+      }
 
       return {
         ...event,
@@ -150,21 +195,86 @@ export async function convertSavedToLeads(eventId: string): Promise<number> {
     return 0;
   }
 
-  // Convert saved submissions to leads
-  const leadsToInsert = savedSubmissions.map((saved) => ({
-    saved_id: saved.id, // Reference to the saved submission
-    first_name: saved.first_name,
-    last_name: saved.last_name,
-    email: saved.email || "", // Handle null email
-    phone: saved.phone || "", // Handle null phone
-    age_range: saved.age_range, // Important for outreach strategy (enum type)
-    needs_ride: saved.needs_ride || false,
-    assigned_user_id: null, // Will be assigned later
-    contacted: false,
-    notes: null,
-  }));
+  // Check which saved submissions already have leads or would violate constraints
+  const existingLeadIds = new Set<string>();
+  const constraintViolationIds = new Set<string>();
 
-  // Insert all leads
+  for (const saved of savedSubmissions) {
+    // Check for direct lead reference
+    const { data: directLead } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("saved_id", saved.id)
+      .maybeSingle();
+
+    if (directLead) {
+      existingLeadIds.add(saved.id);
+      continue;
+    }
+
+    // Check for constraint violation (same name/email/phone combination)
+    const { data: constraintLead } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("first_name", saved.first_name)
+      .eq("last_name", saved.last_name)
+      .eq("email", saved.email || "")
+      .eq("phone", saved.phone || "")
+      .maybeSingle();
+
+    if (constraintLead) {
+      constraintViolationIds.add(saved.id);
+      continue;
+    }
+  }
+
+  // Filter out saved submissions that already have leads or would violate constraints
+  const newSavedSubmissions = savedSubmissions.filter(
+    (saved) =>
+      !existingLeadIds.has(saved.id) && !constraintViolationIds.has(saved.id)
+  );
+
+  if (newSavedSubmissions.length === 0) {
+    return 0; // All submissions already converted or would violate constraints
+  }
+
+  // Convert saved submissions to leads, respecting the unique constraint
+  // on (first_name, last_name, email, phone)
+  const leadsToInsert = [];
+
+  for (const saved of newSavedSubmissions) {
+    // Check if a lead with this exact combination already exists
+    const { data: existingLead } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("first_name", saved.first_name)
+      .eq("last_name", saved.last_name)
+      .eq("email", saved.email || "")
+      .eq("phone", saved.phone || "")
+      .maybeSingle();
+
+    // Only insert if no existing lead with this combination
+    if (!existingLead) {
+      leadsToInsert.push({
+        saved_id: saved.id,
+        first_name: saved.first_name,
+        last_name: saved.last_name,
+        email: saved.email || "",
+        phone: saved.phone || "",
+        age_range: saved.age_range,
+        needs_ride: saved.needs_ride || false,
+        assigned_user_id: null,
+        contacted: false,
+        notes: null,
+      });
+    }
+  }
+
+  if (leadsToInsert.length === 0) {
+    return 0; // No new leads to insert
+  }
+
+  // Insert new leads
   const { error: insertError } = await supabase
     .from("leads")
     .insert(leadsToInsert);
@@ -174,34 +284,129 @@ export async function convertSavedToLeads(eventId: string): Promise<number> {
     throw new Error("Failed to convert saved submissions to leads");
   }
 
-  return savedSubmissions.length;
+  return leadsToInsert.length;
 }
 
-export async function getEventLeads(eventId: string): Promise<Lead[]> {
+export async function getEventLeads(eventId: string): Promise<
+  (Tables<"leads"> & {
+    saved?: {
+      id: string;
+      event_id: string;
+      events: {
+        id: string;
+        name: string;
+        url_slug: string;
+      };
+    } | null;
+  })[]
+> {
   const supabase = createClient();
 
-  const { data: leads, error } = await supabase
-    .from("leads")
+  // Get all saved submissions for this event
+  const { data: savedSubmissions, error: savedError } = await supabase
+    .from("saved")
     .select(
       `
-      *,
-      profiles:assigned_user_id (
+      id, 
+      first_name, 
+      last_name, 
+      email, 
+      phone,
+      events!inner (
         id,
-        first_name,
-        last_name
-      ),
-      saved!inner(event_id)
+        name,
+        url_slug
+      )
     `
     )
-    .eq("saved.event_id", eventId)
-    .order("created_at", { ascending: true });
+    .eq("event_id", eventId);
 
-  if (error) {
-    console.error("Error fetching leads:", error);
-    throw new Error("Failed to fetch leads");
+  if (savedError) {
+    console.error("Error fetching saved submissions:", savedError);
+    throw new Error("Failed to fetch saved submissions");
   }
 
-  return leads || [];
+  if (!savedSubmissions || savedSubmissions.length === 0) {
+    return [];
+  }
+
+  // Get all leads that are either directly referenced or would violate constraints
+  const allEventLeads: Tables<"leads">[] = [];
+
+  for (const saved of savedSubmissions) {
+    // Check for direct lead reference
+    const { data: directLead } = await supabase
+      .from("leads")
+      .select(
+        `
+        *,
+        profiles:assigned_user_id (
+          id,
+          first_name,
+          last_name
+        ),
+        saved:saved_id (
+          id,
+          event_id,
+          events:event_id (
+            id,
+            name,
+            url_slug
+          )
+        )
+      `
+      )
+      .eq("saved_id", saved.id)
+      .maybeSingle();
+
+    if (directLead) {
+      allEventLeads.push(directLead);
+      continue;
+    }
+
+    // Check for constraint violation (same name/email/phone combination)
+    const { data: constraintLead } = await supabase
+      .from("leads")
+      .select(
+        `
+        *,
+        profiles:assigned_user_id (
+          id,
+          first_name,
+          last_name
+        )
+      `
+      )
+      .eq("first_name", saved.first_name)
+      .eq("last_name", saved.last_name)
+      .eq("email", saved.email || "")
+      .eq("phone", saved.phone || "")
+      .maybeSingle();
+
+    // For constraint violation leads, we need to add the event info manually
+    // since they don't have a saved_id reference
+    if (constraintLead) {
+      const leadWithEventInfo = {
+        ...constraintLead,
+        saved: {
+          id: saved.id,
+          event_id: saved.events.id,
+          events: saved.events,
+        },
+      };
+      allEventLeads.push(leadWithEventInfo);
+      continue;
+    }
+  }
+
+  // Sort by creation date and remove duplicates (in case multiple saved submissions match the same lead)
+  const uniqueLeads = allEventLeads.filter(
+    (lead, index, self) => index === self.findIndex((l) => l.id === lead.id)
+  );
+
+  return uniqueLeads.sort((a, b) =>
+    (a.created_at || "").localeCompare(b.created_at || "")
+  );
 }
 
 export async function checkSavedConversionStatus(
@@ -212,7 +417,21 @@ export async function checkSavedConversionStatus(
   // Get all saved submissions for the event
   const { data: savedSubmissions, error: savedError } = await supabase
     .from("saved")
-    .select("id, first_name, last_name, email, phone, age_range")
+    .select(
+      `
+      id, 
+      first_name, 
+      last_name, 
+      email, 
+      phone, 
+      age_range,
+      events!inner (
+        id,
+        name,
+        url_slug
+      )
+    `
+    )
     .eq("event_id", eventId);
 
   if (savedError) {
@@ -228,25 +447,49 @@ export async function checkSavedConversionStatus(
   const conversionStatus: { [key: string]: boolean } = {};
 
   for (const saved of savedSubmissions) {
-    // Check if there's a lead that references this saved submission
-    const { data: existingLead, error: leadError } = await supabase
+    // Check if there's a lead that references this saved submission directly
+    const { data: directLead, error: directError } = await supabase
       .from("leads")
       .select("id")
       .eq("saved_id", saved.id)
-      .single();
+      .maybeSingle();
 
-    if (leadError && leadError.code !== "PGRST116") {
-      // PGRST116 is "not found" error
-      console.error("Error checking lead conversion:", leadError);
+    if (directError) {
+      console.error("Error checking direct lead conversion:", directError);
+      conversionStatus[saved.id] = false;
+      continue;
     }
 
-    conversionStatus[saved.id] = !!existingLead;
+    // If there's a direct lead, mark as converted
+    if (directLead) {
+      conversionStatus[saved.id] = true;
+      continue;
+    }
+
+    // Check if there's a lead with the same name/email/phone combination
+    // This would violate the unique constraint if we tried to convert
+    const { data: constraintLead, error: constraintError } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("first_name", saved.first_name)
+      .eq("last_name", saved.last_name)
+      .eq("email", saved.email || "")
+      .eq("phone", saved.phone || "")
+      .maybeSingle();
+
+    if (constraintError) {
+      console.error("Error checking constraint violation:", constraintError);
+      conversionStatus[saved.id] = false;
+    } else {
+      // Mark as converted if there's a constraint violation
+      conversionStatus[saved.id] = !!constraintLead;
+    }
   }
 
   return conversionStatus;
 }
 
-export async function getAllLeads(): Promise<Lead[]> {
+export async function getAllLeads(): Promise<Tables<"leads">[]> {
   const supabase = createClient();
 
   const { data: leads, error } = await supabase
