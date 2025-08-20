@@ -12,6 +12,7 @@ export interface SavedForm {
   phone: string;
   email: string;
   needs_ride: boolean;
+  age_range: "Child" | "Young Adult" | "Adult";
 }
 
 // Login form

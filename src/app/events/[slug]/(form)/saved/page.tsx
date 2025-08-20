@@ -18,14 +18,25 @@ export default function EventSavedPage() {
     phone: "",
     email: "",
     needs_ride: false,
+    age_range: "Adult",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +110,7 @@ export default function EventSavedPage() {
                   phone: "",
                   email: "",
                   needs_ride: false,
+                  age_range: "Adult",
                 });
               }}
               variant="primary"
@@ -228,6 +240,34 @@ export default function EventSavedPage() {
             <div id="saved-email-help" className="sr-only">
               Optional email address for additional ways to stay connected and
               receive spiritual resources
+            </div>
+          </div>
+
+          {/* Age Range Field */}
+          <div>
+            <label
+              htmlFor="age_range"
+              className="block text-sm font-bold text-gray-900 mb-2"
+            >
+              Age Range
+            </label>
+            <select
+              id="age_range"
+              name="age_range"
+              value={formData.age_range}
+              onChange={handleInputChange}
+              required
+              aria-required="true"
+              aria-describedby="saved-age-range-help"
+              className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 font-medium text-gray-900 bg-white"
+            >
+              <option value="Child">Child</option>
+              <option value="Young Adult">Young Adult</option>
+              <option value="Adult">Adult</option>
+            </select>
+            <div id="saved-age-range-help" className="sr-only">
+              Select your age range to help us provide appropriate spiritual
+              support and resources
             </div>
           </div>
 

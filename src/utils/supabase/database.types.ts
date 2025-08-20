@@ -117,6 +117,69 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          age_range: Database["public"]["Enums"]["age_range"] | null
+          assigned_user_id: string | null
+          contacted: boolean | null
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          needs_ride: boolean | null
+          notes: string | null
+          phone: string | null
+          saved_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_range?: Database["public"]["Enums"]["age_range"] | null
+          assigned_user_id?: string | null
+          contacted?: boolean | null
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          needs_ride?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          saved_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_range?: Database["public"]["Enums"]["age_range"] | null
+          assigned_user_id?: string | null
+          contacted?: boolean | null
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          needs_ride?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          saved_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_saved_id_fkey"
+            columns: ["saved_id"]
+            isOneToOne: false
+            referencedRelation: "saved"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_permissions: {
         Row: {
           created_at: string | null
@@ -178,6 +241,7 @@ export type Database = {
       }
       saved: {
         Row: {
+          age_range: Database["public"]["Enums"]["age_range"] | null
           created_at: string | null
           email: string | null
           event_id: string
@@ -189,6 +253,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          age_range?: Database["public"]["Enums"]["age_range"] | null
           created_at?: string | null
           email?: string | null
           event_id: string
@@ -200,6 +265,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          age_range?: Database["public"]["Enums"]["age_range"] | null
           created_at?: string | null
           email?: string | null
           event_id?: string
@@ -235,7 +301,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      age_range: "Child" | "Young Adult" | "Adult"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -362,6 +428,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      age_range: ["Child", "Young Adult", "Adult"],
+    },
   },
 } as const
