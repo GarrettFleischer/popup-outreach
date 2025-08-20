@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Lead } from "@/utils/supabase/actions/actions";
+import { Tables } from "@/utils/supabase/database.types";
 
 interface LeadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (leadData: LeadFormData) => Promise<void>;
   lead?: Lead | null; // If provided, we're editing; if null/undefined, we're creating
+  profiles?: Tables<"profiles">[]; // Available users for assignment
 }
 
 export interface LeadFormData {
@@ -18,9 +20,16 @@ export interface LeadFormData {
   needs_ride: boolean;
   contacted: boolean;
   notes: string;
+  assigned_user_id?: string | null;
 }
 
-export function LeadDialog({ isOpen, onClose, onSave, lead }: LeadDialogProps) {
+export function LeadDialog({
+  isOpen,
+  onClose,
+  onSave,
+  lead,
+  profiles = [],
+}: LeadDialogProps) {
   const [formData, setFormData] = useState<LeadFormData>({
     first_name: "",
     last_name: "",
@@ -30,6 +39,7 @@ export function LeadDialog({ isOpen, onClose, onSave, lead }: LeadDialogProps) {
     needs_ride: false,
     contacted: false,
     notes: "",
+    assigned_user_id: null,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -47,6 +57,7 @@ export function LeadDialog({ isOpen, onClose, onSave, lead }: LeadDialogProps) {
           needs_ride: lead.needs_ride || false,
           contacted: lead.contacted || false,
           notes: lead.notes || "",
+          assigned_user_id: lead.assigned_user_id || null,
         });
       } else {
         // Creating new lead
@@ -59,6 +70,7 @@ export function LeadDialog({ isOpen, onClose, onSave, lead }: LeadDialogProps) {
           needs_ride: false,
           contacted: false,
           notes: "",
+          assigned_user_id: null,
         });
       }
     }
@@ -209,6 +221,34 @@ export function LeadDialog({ isOpen, onClose, onSave, lead }: LeadDialogProps) {
                 <option value="Child">Child</option>
                 <option value="Young Adult">Young Adult</option>
                 <option value="Adult">Adult</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="assigned_user_id"
+                className="block text-sm font-medium text-gray-900 mb-1"
+              >
+                Assign To
+              </label>
+              <select
+                id="assigned_user_id"
+                name="assigned_user_id"
+                value={formData.assigned_user_id || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    assigned_user_id: e.target.value || null,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+              >
+                <option value="">Unassigned</option>
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.first_name} {profile.last_name}
+                  </option>
+                ))}
               </select>
             </div>
 

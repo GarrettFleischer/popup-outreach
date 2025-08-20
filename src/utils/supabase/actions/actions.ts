@@ -532,6 +532,7 @@ export async function createLead(leadData: {
   needs_ride?: boolean;
   contacted?: boolean;
   notes?: string;
+  assigned_user_id?: string | null;
 }): Promise<Lead> {
   const supabase = createClient();
 
@@ -546,7 +547,7 @@ export async function createLead(leadData: {
       needs_ride: leadData.needs_ride || false,
       contacted: leadData.contacted || false,
       notes: leadData.notes || null,
-      assigned_user_id: null, // Will be assigned later
+      assigned_user_id: leadData.assigned_user_id || null,
       saved_id: null, // Manual lead, not from saved submission
     })
     .select()
@@ -589,4 +590,37 @@ export async function updateLead(
   }
 
   return lead;
+}
+
+export async function getAllProfiles(): Promise<Tables<"profiles">[]> {
+  const supabase = createClient();
+
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching profiles:", error);
+    throw new Error("Failed to fetch profiles");
+  }
+
+  return profiles || [];
+}
+
+export async function bulkAssignLeads(
+  leadIds: string[],
+  assignedUserId: string | null
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("leads")
+    .update({ assigned_user_id: assignedUserId })
+    .in("id", leadIds);
+
+  if (error) {
+    console.error("Error bulk assigning leads:", error);
+    throw new Error("Failed to bulk assign leads");
+  }
 }
