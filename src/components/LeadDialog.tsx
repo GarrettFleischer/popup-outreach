@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { Lead } from "@/utils/supabase/actions/actions";
+import { SavedSubmission } from "@/utils/supabase/actions/actions";
 import { Tables } from "@/utils/supabase/database.types";
 
 interface LeadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (leadData: LeadFormData) => Promise<void>;
-  lead?: Lead | null; // If provided, we're editing; if null/undefined, we're creating
+  lead?: SavedSubmission | null; // If provided, we're editing; if null/undefined, we're creating
   profiles?: Tables<"profiles">[]; // Available users for assignment
+  events?: Tables<"events">[]; // Available events for selection
 }
 
 export interface LeadFormData {
+  event_id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -29,8 +31,10 @@ export function LeadDialog({
   onSave,
   lead,
   profiles = [],
+  events = [],
 }: LeadDialogProps) {
   const [formData, setFormData] = useState<LeadFormData>({
+    event_id: "",
     first_name: "",
     last_name: "",
     email: "",
@@ -49,6 +53,7 @@ export function LeadDialog({
       if (lead) {
         // Editing existing lead
         setFormData({
+          event_id: lead.event_id,
           first_name: lead.first_name,
           last_name: lead.last_name,
           email: lead.email,
@@ -62,6 +67,7 @@ export function LeadDialog({
       } else {
         // Creating new lead
         setFormData({
+          event_id: "",
           first_name: "",
           last_name: "",
           email: "",
@@ -157,6 +163,30 @@ export function LeadDialog({
                   placeholder="Last name"
                 />
               </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="event_id"
+                className="block text-sm font-medium text-gray-900 mb-1"
+              >
+                Event *
+              </label>
+              <select
+                id="event_id"
+                name="event_id"
+                required
+                value={formData.event_id}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+              >
+                <option value="">Select an event</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.name} - {new Date(event.date).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

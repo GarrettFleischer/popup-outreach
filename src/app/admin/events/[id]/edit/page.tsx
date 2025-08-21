@@ -9,8 +9,6 @@ import {
   getEventAttendees,
   getEventSavedSubmissions,
   updateEvent,
-  convertSavedToLeads,
-  checkSavedConversionStatus,
   type EventWithStats,
   type Attendee,
   type SavedSubmission,
@@ -28,9 +26,7 @@ export default function EditEventPage() {
   const [savedSubmissions, setSavedSubmissions] = useState<SavedSubmission[]>(
     []
   );
-  const [conversionStatus, setConversionStatus] = useState<{
-    [key: string]: boolean;
-  }>({});
+
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -52,15 +48,13 @@ export default function EditEventPage() {
   const loadEventData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [attendeesData, savedData, conversionData] = await Promise.all([
+      const [attendeesData, savedData] = await Promise.all([
         getEventAttendees(eventId),
         getEventSavedSubmissions(eventId),
-        checkSavedConversionStatus(eventId),
       ]);
 
       setAttendees(attendeesData);
       setSavedSubmissions(savedData);
-      setConversionStatus(conversionData);
     } catch (error) {
       console.error("Error loading event data:", error);
     } finally {
@@ -631,40 +625,6 @@ export default function EditEventPage() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   Saved ({savedSubmissions.length})
                 </h3>
-                {savedSubmissions.length > 0 && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={Object.values(conversionStatus).every(
-                      (status) => status
-                    )}
-                    onClick={async () => {
-                      try {
-                        const convertedCount = await convertSavedToLeads(
-                          eventId
-                        );
-                        alert(
-                          `Successfully converted ${convertedCount} saved submissions to leads.`
-                        );
-                        // Reload saved submissions to show updated status
-                        await loadEventData();
-                      } catch (error) {
-                        console.error("Error converting to leads:", error);
-                        alert(
-                          "Failed to convert saved submissions to leads. Please try again."
-                        );
-                      }
-                    }}
-                  >
-                    {Object.values(conversionStatus).every((status) => status)
-                      ? "All Converted"
-                      : `Convert All to Leads (${
-                          savedSubmissions.filter(
-                            (saved) => !conversionStatus[saved.id]
-                          ).length
-                        })`}
-                  </Button>
-                )}
               </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
@@ -706,9 +666,9 @@ export default function EditEventPage() {
                                 🚗 Needs Ride
                               </span>
                             )}
-                            {conversionStatus[saved.id] && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✅ Converted to Lead
+                            {saved.assigned_user_id && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                👤 Assigned
                               </span>
                             )}
                           </div>

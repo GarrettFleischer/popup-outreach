@@ -14,18 +14,15 @@ import {
   updateLead,
   getAllProfiles,
   bulkAssignLeads,
+  getEventsWithStats,
 } from "@/utils/supabase/actions/actions";
 import { Tables } from "@/utils/supabase/database.types";
 
-type LeadWithEventInfo = Tables<"leads"> & {
-  saved?: {
+type LeadWithEventInfo = Tables<"saved"> & {
+  events?: {
     id: string;
-    event_id: string;
-    events: {
-      id: string;
-      name: string;
-      url_slug: string;
-    };
+    name: string;
+    url_slug: string;
   } | null;
   profiles?: {
     id: string;
@@ -40,6 +37,7 @@ export default function LeadsManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<LeadWithEventInfo[]>([]);
   const [profiles, setProfiles] = useState<Tables<"profiles">[]>([]);
+  const [events, setEvents] = useState<Tables<"events">[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadWithEventInfo | null>(
     null
@@ -61,6 +59,7 @@ export default function LeadsManagement() {
     // Middleware handles admin authorization, so we just need to check if user exists
     loadLeads();
     loadProfiles();
+    loadEvents();
   }, [user, router]);
 
   const loadLeads = async () => {
@@ -81,6 +80,15 @@ export default function LeadsManagement() {
       setProfiles(allProfiles);
     } catch (error) {
       console.error("Error loading profiles:", error);
+    }
+  };
+
+  const loadEvents = async () => {
+    try {
+      const allEvents = await getEventsWithStats();
+      setEvents(allEvents);
+    } catch (error) {
+      console.error("Error loading events:", error);
     }
   };
 
@@ -252,6 +260,7 @@ export default function LeadsManagement() {
         onSave={handleSaveLead}
         lead={editingLead}
         profiles={profiles}
+        events={events}
       />
     </div>
   );

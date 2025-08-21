@@ -1,17 +1,14 @@
 // Lead types that extend the database types
+// Since leads are now consolidated into the saved table, we use the saved table types
 import { Tables } from "@/utils/supabase/database.types";
 
-export type Lead = Tables<"leads">;
+export type Lead = Tables<"saved">;
 
 export interface LeadWithEvent extends Lead {
-  saved: {
+  events: {
     id: string;
-    event_id: string;
-    event?: {
-      id: string;
-      name: string;
-      url_slug: string;
-    };
+    name: string;
+    url_slug: string;
   } | null;
 }
 

@@ -3,15 +3,11 @@ import { Tables } from "@/utils/supabase/database.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSuperAdmin } from "@/utils/supabase/types/users";
 
-type LeadWithEventInfo = Tables<"leads"> & {
-  saved?: {
+type LeadWithEventInfo = Tables<"saved"> & {
+  events?: {
     id: string;
-    event_id: string;
-    events: {
-      id: string;
-      name: string;
-      url_slug: string;
-    };
+    name: string;
+    url_slug: string;
   } | null;
   profiles?: {
     id: string;
@@ -195,11 +191,7 @@ export function LeadsTable({
                   onClick={() => onEditLead?.(lead)}
                 >
                   <div className="text-sm text-gray-900">
-                    {lead.saved?.events?.name
-                      ? lead.saved.events.name
-                      : lead.saved_id
-                      ? "From Saved Submission"
-                      : "Manual Lead"}
+                    {lead.events?.name ? lead.events.name : "Event Lead"}
                   </div>
                   <div className="text-sm text-gray-500">
                     {lead.created_at
