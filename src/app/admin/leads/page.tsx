@@ -29,6 +29,11 @@ type LeadWithEventInfo = Tables<"saved"> & {
     first_name: string;
     last_name: string;
   } | null;
+  referrer_profiles?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+  } | null;
 };
 
 export default function LeadsManagement() {
@@ -46,6 +51,7 @@ export default function LeadsManagement() {
   // Filter states
   const [hideContacted, setHideContacted] = useState(false);
   const [hideAssigned, setHideAssigned] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -103,6 +109,32 @@ export default function LeadsManagement() {
     // Level 1 users (lead managers) only see their own leads, so this filter doesn't make sense
     if (isSuperAdmin(user?.profile) && hideAssigned && lead.assigned_user_id) {
       return false;
+    }
+
+    // Apply search filter if search query exists
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const searchableFields = [
+        // Lead name
+        lead.first_name?.toLowerCase() || "",
+        lead.last_name?.toLowerCase() || "",
+        // Age type
+        lead.age_range?.toLowerCase() || "",
+        // Source name (event name)
+        lead.events?.name?.toLowerCase() || "",
+        // Contact info
+        lead.email?.toLowerCase() || "",
+        lead.phone?.toLowerCase() || "",
+        lead.address?.toLowerCase() || "",
+        // Assigned to
+        lead.profiles?.first_name?.toLowerCase() || "",
+        lead.profiles?.last_name?.toLowerCase() || "",
+        // Referred by
+        lead.referrer_profiles?.first_name?.toLowerCase() || "",
+        lead.referrer_profiles?.last_name?.toLowerCase() || "",
+      ];
+
+      return searchableFields.some((field) => field.includes(query));
     }
 
     return true;
@@ -217,6 +249,18 @@ export default function LeadsManagement() {
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex items-center space-x-6">
           <h3 className="text-sm font-medium text-gray-900">Filters:</h3>
+
+          {/* Search Box */}
+          <div className="flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search leads by name, age, source, contact info, assigned to, or referred by..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
           <label className="flex items-center space-x-2">
             <input
               type="checkbox"
