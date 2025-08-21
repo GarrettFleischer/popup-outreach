@@ -88,8 +88,8 @@ export function LeadsTable({
                   </option>
                   {profiles.map((profile) => (
                     <option
-                      key={profile.id}
-                      value={profile.id}
+                      key={profile.user_id}
+                      value={profile.user_id}
                       className="text-gray-900"
                     >
                       {profile.first_name} {profile.last_name}

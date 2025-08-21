@@ -2,6 +2,7 @@
 export * from "./users";
 export * from "./events";
 export * from "./forms";
+export * from "./themes";
 
 // Re-export database types for convenience
 export { type Tables, type Database } from "@/utils/supabase/database.types";

@@ -383,3 +383,75 @@ export async function bulkAssignLeads(
     throw new Error("Failed to bulk assign leads");
   }
 }
+
+export async function updateUserPermission(
+  targetUserId: string,
+  newPermissionLevel: number
+): Promise<boolean> {
+  const supabase = createClient();
+
+  // Use RPC call for the update_user_permission function
+  const { data, error } = await supabase.rpc("update_user_permission", {
+    target_user_id: targetUserId,
+    new_permission_level: newPermissionLevel,
+  });
+
+  if (error) {
+    console.error("Error updating user permission:", error);
+    throw new Error("Failed to update user permission");
+  }
+
+  return Boolean(data);
+}
+
+export async function getAllProfilesWithPermissions(): Promise<
+  Array<
+    Tables<"profiles"> & {
+      profile_permissions: { permission_level: number } | null;
+    }
+  >
+> {
+  const supabase = createClient();
+
+  // First check if the current user is a super admin
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  if (!currentUser?.id) {
+    throw new Error("User not authenticated");
+  }
+
+  const { data: currentUserPermissions, error: permError } = await supabase
+    .from("profile_permissions")
+    .select("permission_level")
+    .eq("user_id", currentUser.id)
+    .single();
+
+  if (
+    permError ||
+    !currentUserPermissions ||
+    currentUserPermissions.permission_level !== 0
+  ) {
+    throw new Error("Access denied: Only super admins can view all profiles");
+  }
+
+  // If we're here, the user is a super admin, so we can fetch all profiles
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select(
+      `
+      *,
+      profile_permissions (
+        permission_level
+      )
+    `
+    )
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching profiles with permissions:", error);
+    throw new Error("Failed to fetch profiles with permissions");
+  }
+
+  return profiles || [];
+}

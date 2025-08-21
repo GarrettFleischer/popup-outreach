@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          is_super_admin: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          is_super_admin?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          is_super_admin?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendees: {
         Row: {
           created_at: string | null
@@ -113,28 +131,25 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
         ]
       }
       profile_permissions: {
         Row: {
           created_at: string | null
-          id: string
           permission_level: number
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          id?: string
           permission_level?: number
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
-          id?: string
           permission_level?: number
           updated_at?: string | null
           user_id?: string
@@ -153,7 +168,6 @@ export type Database = {
         Row: {
           created_at: string | null
           first_name: string
-          id: string
           last_name: string
           updated_at: string | null
           user_id: string
@@ -161,7 +175,6 @@ export type Database = {
         Insert: {
           created_at?: string | null
           first_name: string
-          id?: string
           last_name: string
           updated_at?: string | null
           user_id: string
@@ -169,7 +182,6 @@ export type Database = {
         Update: {
           created_at?: string | null
           first_name?: string
-          id?: string
           last_name?: string
           updated_at?: string | null
           user_id?: string
@@ -228,7 +240,7 @@ export type Database = {
             columns: ["assigned_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "saved_event_id_fkey"
@@ -258,6 +270,14 @@ export type Database = {
       }
       is_lead_manager: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      update_user_permission: {
+        Args: { new_permission_level: number; target_user_id: string }
         Returns: boolean
       }
     }

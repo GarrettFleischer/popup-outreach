@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ColorPicker } from "@/components/ui/ColorPicker";
+import { ThemeDropdown } from "@/components/ui/ThemeDropdown";
 import {
   getEventsWithStats,
   getEventAttendees,
@@ -13,6 +14,7 @@ import {
   type Attendee,
   type SavedSubmission,
 } from "@/utils/supabase/actions/actions";
+import { predefinedThemes, type Theme } from "@/utils/supabase/types";
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -44,6 +46,30 @@ export default function EditEventPage() {
   });
 
   const [isStylingExpanded, setIsStylingExpanded] = useState(false);
+
+  const handleThemeChange = (theme: Theme) => {
+    // Don't change colors if "Custom" is selected
+    if (theme.name === "Custom") return;
+
+    setEditForm((prev) => ({
+      ...prev,
+      gradient_from_color: theme.colors.from,
+      gradient_through_color: theme.colors.through,
+      gradient_to_color: theme.colors.to,
+    }));
+  };
+
+  const getCurrentTheme = (): Theme | null => {
+    return (
+      predefinedThemes.find(
+        (theme) =>
+          theme.name !== "Custom" &&
+          editForm.gradient_from_color === theme.colors.from &&
+          editForm.gradient_through_color === theme.colors.through &&
+          editForm.gradient_to_color === theme.colors.to
+      ) || null
+    );
+  };
 
   const loadEventData = useCallback(async () => {
     setIsLoadingData(true);
@@ -380,6 +406,25 @@ export default function EditEventPage() {
 
                   {isStylingExpanded && (
                     <>
+                      {/* Comprehensive Theme Dropdown */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Select Theme
+                        </label>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Choose from predefined themes or use the color pickers
+                          below for custom colors. The &quot;Custom&quot; option
+                          is automatically selected when you modify individual
+                          colors.
+                        </p>
+                        <ThemeDropdown
+                          themes={predefinedThemes}
+                          selectedTheme={getCurrentTheme()}
+                          onThemeChange={handleThemeChange}
+                          placeholder="Select Theme"
+                        />
+                      </div>
+
                       {/* Gradient Colors */}
                       <div className="grid grid-cols-3 gap-4 mb-6">
                         <div>

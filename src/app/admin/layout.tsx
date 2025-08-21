@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
+import { getUserPermissionLevel } from "@/utils/supabase/types/users";
+import Link from "next/link";
 
 export default function AdminLayout({
   children,
@@ -35,6 +37,8 @@ export default function AdminLayout({
 
   // Middleware has already verified admin permissions, so we can render
   // If we reach here, the user is guaranteed to have admin access
+  const permissionLevel = getUserPermissionLevel(user.profile);
+  const isSuperAdmin = permissionLevel === 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,17 +46,22 @@ export default function AdminLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Admin Panel
-              </h1>
+              <Link
+                href="/"
+                className="text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer"
+              >
+                Reno Revival
+              </Link>
               <div className="flex space-x-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push("/admin/dashboard")}
-                  className="text-gray-700 hover:text-gray-900"
-                >
-                  Dashboard
-                </Button>
+                {isSuperAdmin && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => router.push("/admin/dashboard")}
+                    className="text-gray-700 hover:text-gray-900"
+                  >
+                    Dashboard
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   onClick={() => router.push("/admin/leads")}

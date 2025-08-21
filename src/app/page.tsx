@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { Event } from "@/utils/supabase/types";
+import Header from "@/components/Header";
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -44,6 +45,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header />
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">

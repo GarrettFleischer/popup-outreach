@@ -116,21 +116,24 @@ export default function EventRegisterPage() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">
-          {event.custom_title || "FREE EVENT"}
+          {event.custom_title || ""}
         </h1>
         <div className="text-center mb-4">
-          <p
-            className="text-3xl font-bold text-black mb-2 drop-shadow-lg"
-            style={{
-              textShadow: "2px 2px 0px #ff0000, -2px -2px 0px #00ffff",
-            }}
-          >
-            {event.custom_subtitle || "YOU'RE INVITED"}
-          </p>
-          <p className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
-            {event.custom_description ||
-              "Register To Win An Oculus Quest VR Headset Grand Prize"}
-          </p>
+          {event.custom_subtitle && (
+            <p
+              className="text-3xl font-bold text-black mb-2 drop-shadow-lg"
+              style={{
+                textShadow: "2px 2px 0px #ff0000, -2px -2px 0px #00ffff",
+              }}
+            >
+              {event.custom_subtitle}
+            </p>
+          )}
+          {event.custom_description && (
+            <p className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
+              {event.custom_description}
+            </p>
+          )}
         </div>
       </div>
 
@@ -221,19 +224,21 @@ export default function EventRegisterPage() {
               <p className="text-lg font-bold text-gray-800 mb-2">
                 CASH PRIZES & GIFT CARDS
               </p>
-              <div className="relative inline-block">
-                <div className="bg-white border-2 border-white rounded-full px-6 py-2">
-                  <span className="text-lg font-bold text-gray-900">
-                    {event.grand_prize || "VR HEADSET"}
-                  </span>
+              {event.grand_prize && (
+                <div className="relative inline-block">
+                  <div className="bg-white border-2 border-white rounded-full px-6 py-2">
+                    <span className="text-lg font-bold text-gray-900">
+                      {event.grand_prize}
+                    </span>
+                  </div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -left-4 text-yellow-500 text-2xl">
+                    →
+                  </div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-yellow-500 text-2xl">
+                    ←
+                  </div>
                 </div>
-                <div className="absolute top-1/2 -translate-y-1/2 -left-4 text-yellow-500 text-2xl">
-                  →
-                </div>
-                <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-yellow-500 text-2xl">
-                  ←
-                </div>
-              </div>
+              )}
             </div>
           </div>
 

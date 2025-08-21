@@ -48,37 +48,44 @@ const fetchProfile = async (
   error: PostgrestError | null;
 }> => {
   try {
-    const { data, error } = await supabase
+    // First fetch the basic profile
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select(
-        `
-        *,
-        profile_permissions (
-          permission_level
-        )
-      `
-      )
+      .select("*")
       .eq("user_id", userId)
       .single();
 
-    if (error) {
-      return { profile: null, error };
+    if (profileError) {
+      return { profile: null, error: profileError };
     }
 
-    // Transform the data to match our ProfileWithPermissions interface
+    // Then fetch the permissions separately
+    const { data: permissionData, error: permissionError } = await supabase
+      .from("profile_permissions")
+      .select("permission_level")
+      .eq("user_id", userId)
+      .single();
+
+    if (permissionError && permissionError.code !== "PGRST116") {
+      // PGRST116 is "no rows returned" which is OK
+      console.log(
+        "Error fetching permissions:",
+        JSON.stringify(permissionError)
+      );
+      // Continue anyway, just without permissions
+    }
+
+    // Combine the data
     const profile: ProfileWithPermissions = {
-      ...data,
-      profile_permissions: data.profile_permissions
-        ? Array.isArray(data.profile_permissions)
-          ? data.profile_permissions.length > 0
-            ? { permission_level: data.profile_permissions[0].permission_level }
-            : null
-          : { permission_level: data.profile_permissions.permission_level }
+      ...profileData,
+      profile_permissions: permissionData
+        ? { permission_level: permissionData.permission_level }
         : null,
     };
 
     return { profile, error: null };
   } catch (error) {
+    console.log("Unexpected error in fetchProfile:", error);
     return { profile: null, error: error as PostgrestError };
   }
 };
