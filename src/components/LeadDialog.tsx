@@ -56,7 +56,7 @@ export function LeadDialog({
           event_id: lead.event_id,
           first_name: lead.first_name,
           last_name: lead.last_name,
-          email: lead.email,
+          email: lead.email || "",
           phone: lead.phone || "",
           age_range: lead.age_range,
           needs_ride: lead.needs_ride || false,
