@@ -590,10 +590,7 @@ export default function EditEventPage() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      window.open(
-                        `/events/${event.url_slug}/register`,
-                        "_blank"
-                      )
+                      window.open(`/events/${event.url_slug}`, "_blank")
                     }
                     className="w-full"
                   >

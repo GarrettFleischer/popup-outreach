@@ -190,6 +190,7 @@ export type Database = {
       }
       saved: {
         Row: {
+          address: string | null
           age_range: Database["public"]["Enums"]["age_range"] | null
           assigned_user_id: string | null
           contacted: boolean | null
@@ -206,6 +207,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           age_range?: Database["public"]["Enums"]["age_range"] | null
           assigned_user_id?: string | null
           contacted?: boolean | null
@@ -222,6 +224,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           age_range?: Database["public"]["Enums"]["age_range"] | null
           assigned_user_id?: string | null
           contacted?: boolean | null

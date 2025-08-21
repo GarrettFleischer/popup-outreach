@@ -22,6 +22,7 @@ export interface LeadFormData {
   needs_ride: boolean;
   contacted: boolean;
   notes: string;
+  address: string;
   assigned_user_id?: string | null;
   referrer_user_id?: string | null;
 }
@@ -44,6 +45,7 @@ export function LeadDialog({
     needs_ride: false,
     contacted: false,
     notes: "",
+    address: "",
     assigned_user_id: null,
     referrer_user_id: null,
   });
@@ -64,6 +66,7 @@ export function LeadDialog({
           needs_ride: lead.needs_ride || false,
           contacted: lead.contacted || false,
           notes: lead.notes || "",
+          address: lead.address || "",
           assigned_user_id: lead.assigned_user_id || null,
           referrer_user_id: lead.referrer_user_id || null,
         });
@@ -79,6 +82,7 @@ export function LeadDialog({
           needs_ride: false,
           contacted: false,
           notes: "",
+          address: "",
           assigned_user_id: null,
           referrer_user_id: null,
         });
@@ -227,6 +231,24 @@ export function LeadDialog({
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 placeholder="(555) 123-4567"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="address"
+                className="block text-sm font-medium text-gray-900 mb-1"
+              >
+                Address
+              </label>
+              <textarea
+                id="address"
+                name="address"
+                rows={2}
+                value={formData.address}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                placeholder="Enter address (optional)"
               />
             </div>
 

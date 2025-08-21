@@ -252,10 +252,7 @@ export default function EventsManagementTab() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(
-                            `/events/${event.url_slug}/register`,
-                            "_blank"
-                          );
+                          window.open(`/events/${event.url_slug}`, "_blank");
                         }}
                       >
                         Open Event

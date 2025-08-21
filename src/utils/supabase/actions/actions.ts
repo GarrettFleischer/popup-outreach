@@ -296,6 +296,7 @@ export async function createLead(leadData: {
   needs_ride?: boolean;
   contacted?: boolean;
   notes?: string;
+  address?: string;
   assigned_user_id?: string | null;
   referrer_user_id?: string | null;
 }): Promise<SavedSubmission> {
@@ -313,6 +314,7 @@ export async function createLead(leadData: {
       needs_ride: leadData.needs_ride || false,
       contacted: leadData.contacted || false,
       notes: leadData.notes || null,
+      address: leadData.address || null,
       assigned_user_id: leadData.assigned_user_id || null,
       referrer_user_id: leadData.referrer_user_id || null,
     })
@@ -338,6 +340,7 @@ export async function updateLead(
     needs_ride?: boolean;
     contacted?: boolean;
     notes?: string;
+    address?: string;
     assigned_user_id?: string | null;
     referrer_user_id?: string | null;
   }
