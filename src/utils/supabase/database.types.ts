@@ -202,6 +202,7 @@ export type Database = {
           needs_ride: boolean | null
           notes: string | null
           phone: string
+          referrer_user_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -217,6 +218,7 @@ export type Database = {
           needs_ride?: boolean | null
           notes?: string | null
           phone: string
+          referrer_user_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -232,6 +234,7 @@ export type Database = {
           needs_ride?: boolean | null
           notes?: string | null
           phone?: string
+          referrer_user_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -248,6 +251,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_referrer_user_id_fkey"
+            columns: ["referrer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }

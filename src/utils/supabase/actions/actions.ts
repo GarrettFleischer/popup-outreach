@@ -221,6 +221,7 @@ export async function checkSavedConversionStatus(
       phone, 
       age_range,
       assigned_user_id,
+      referrer_user_id,
       events!inner (
         id,
         name,
@@ -263,6 +264,11 @@ export async function getAllLeads(): Promise<Tables<"saved">[]> {
         first_name,
         last_name
       ),
+      referrer_profiles:referrer_user_id (
+        user_id,
+        first_name,
+        last_name
+      ),
       events:event_id (
         id,
         name,
@@ -291,6 +297,7 @@ export async function createLead(leadData: {
   contacted?: boolean;
   notes?: string;
   assigned_user_id?: string | null;
+  referrer_user_id?: string | null;
 }): Promise<SavedSubmission> {
   const supabase = createClient();
 
@@ -307,6 +314,7 @@ export async function createLead(leadData: {
       contacted: leadData.contacted || false,
       notes: leadData.notes || null,
       assigned_user_id: leadData.assigned_user_id || null,
+      referrer_user_id: leadData.referrer_user_id || null,
     })
     .select()
     .single();
@@ -331,6 +339,7 @@ export async function updateLead(
     contacted?: boolean;
     notes?: string;
     assigned_user_id?: string | null;
+    referrer_user_id?: string | null;
   }
 ): Promise<SavedSubmission> {
   const supabase = createClient();

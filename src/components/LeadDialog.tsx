@@ -23,6 +23,7 @@ export interface LeadFormData {
   contacted: boolean;
   notes: string;
   assigned_user_id?: string | null;
+  referrer_user_id?: string | null;
 }
 
 export function LeadDialog({
@@ -44,6 +45,7 @@ export function LeadDialog({
     contacted: false,
     notes: "",
     assigned_user_id: null,
+    referrer_user_id: null,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,6 +65,7 @@ export function LeadDialog({
           contacted: lead.contacted || false,
           notes: lead.notes || "",
           assigned_user_id: lead.assigned_user_id || null,
+          referrer_user_id: lead.referrer_user_id || null,
         });
       } else {
         // Creating new lead
@@ -77,6 +80,7 @@ export function LeadDialog({
           contacted: false,
           notes: "",
           assigned_user_id: null,
+          referrer_user_id: null,
         });
       }
     }
@@ -274,6 +278,34 @@ export function LeadDialog({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
               >
                 <option value="">Unassigned</option>
+                {profiles.map((profile) => (
+                  <option key={profile.user_id} value={profile.user_id}>
+                    {profile.first_name} {profile.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="referrer_user_id"
+                className="block text-sm font-medium text-gray-900 mb-1"
+              >
+                Referred By
+              </label>
+              <select
+                id="referrer_user_id"
+                name="referrer_user_id"
+                value={formData.referrer_user_id || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    referrer_user_id: e.target.value || null,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+              >
+                <option value="">Select referrer</option>
                 {profiles.map((profile) => (
                   <option key={profile.user_id} value={profile.user_id}>
                     {profile.first_name} {profile.last_name}

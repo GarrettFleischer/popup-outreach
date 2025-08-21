@@ -14,6 +14,11 @@ type LeadWithEventInfo = Tables<"saved"> & {
     first_name: string;
     last_name: string;
   } | null;
+  referrer_profiles?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+  } | null;
 };
 
 interface LeadsTableProps {
@@ -154,6 +159,9 @@ export function LeadsTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Assigned To
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Referred By
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -232,6 +240,18 @@ export function LeadsTable({
                         ? `${lead.profiles.first_name} ${lead.profiles.last_name}`
                         : "Assigned"
                       : "Unassigned"}
+                  </div>
+                </td>
+                <td
+                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                  onClick={() => onEditLead?.(lead)}
+                >
+                  <div className="text-sm text-gray-900">
+                    {lead.referrer_user_id
+                      ? lead.referrer_profiles
+                        ? `${lead.referrer_profiles.first_name} ${lead.referrer_profiles.last_name}`
+                        : "Referred"
+                      : "Unknown"}
                   </div>
                 </td>
               </tr>
