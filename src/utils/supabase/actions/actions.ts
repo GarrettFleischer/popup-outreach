@@ -181,7 +181,7 @@ export async function getEventLeads(
       `
       *,
       profiles:assigned_user_id (
-        id,
+        user_id,
         first_name,
         last_name
       ),
@@ -259,7 +259,7 @@ export async function getAllLeads(): Promise<Tables<"saved">[]> {
       `
       *,
       profiles:assigned_user_id (
-        id,
+        user_id,
         first_name,
         last_name
       ),
