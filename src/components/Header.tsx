@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 export default function Header() {
-  const { user, signOut, loading } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut("local");
-  };
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -40,17 +36,11 @@ export default function Header() {
 
           <div className="flex items-center space-x-4">
             {user ? (
-              <>
-                <Link
-                  href="/admin/dashboard"
-                  className="text-sm text-gray-700 hover:text-indigo-600 transition-colors duration-200 cursor-pointer"
-                >
-                  Welcome, {user.profile?.first_name || user.email}
-                </Link>
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Logout
+              <Link href="/admin/dashboard">
+                <Button variant="primary" size="sm">
+                  Dashboard
                 </Button>
-              </>
+              </Link>
             ) : (
               <Link href="/auth/login">
                 <Button variant="primary" size="sm">
