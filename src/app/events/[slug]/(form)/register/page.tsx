@@ -21,10 +21,14 @@ export default function EventRegisterPage() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const target = e.target as HTMLInputElement & {
+      dataset: { field?: string };
+    };
+    const fieldName = target.dataset.field || target.name;
+    const { value } = target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [fieldName]: value,
     }));
   };
 
@@ -151,15 +155,16 @@ export default function EventRegisterPage() {
           {/* Name Fields */}
           <div>
             <label
-              htmlFor="first_name"
+              htmlFor="rf1"
               className="block text-sm font-bold text-gray-900 mb-2"
             >
-              First Name
+              {"Fir\u200Bst Name"}
             </label>
             <input
               type="text"
-              id="first_name"
-              name="first_name"
+              id="rf1"
+              name="rf1"
+              data-field="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
               required
@@ -167,7 +172,7 @@ export default function EventRegisterPage() {
               aria-describedby="first-name-help"
               autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
-              placeholder="Enter your first name"
+              placeholder={"Enter your fir\u200Bst name"}
             />
             <div id="first-name-help" className="sr-only">
               Enter your first name as it appears on official documents
@@ -176,15 +181,16 @@ export default function EventRegisterPage() {
 
           <div>
             <label
-              htmlFor="last_name"
+              htmlFor="rf2"
               className="block text-sm font-bold text-gray-900 mb-2"
             >
-              Last Name
+              {"La\u200Bst Name"}
             </label>
             <input
               type="text"
-              id="last_name"
-              name="last_name"
+              id="rf2"
+              name="rf2"
+              data-field="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
               required
@@ -192,7 +198,7 @@ export default function EventRegisterPage() {
               aria-describedby="last-name-help"
               autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
-              placeholder="Enter your last name"
+              placeholder={"Enter your la\u200Bst name"}
             />
             <div id="last-name-help" className="sr-only">
               Enter your last name as it appears on official documents
@@ -202,15 +208,16 @@ export default function EventRegisterPage() {
           {/* Phone Field */}
           <div>
             <label
-              htmlFor="phone"
+              htmlFor="rf3"
               className="block text-sm font-bold text-gray-900 mb-2"
             >
-              Phone Number
+              {"Pho\u200Bne Number"}
             </label>
             <input
               type="tel"
-              id="phone"
-              name="phone"
+              id="rf3"
+              name="rf3"
+              data-field="phone"
               value={formData.phone}
               onChange={handleInputChange}
               required
@@ -218,7 +225,7 @@ export default function EventRegisterPage() {
               aria-describedby="phone-help"
               autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
-              placeholder="Enter your phone number"
+              placeholder={"Enter your pho\u200Bne number"}
             />
             <div id="phone-help" className="sr-only">
               Enter your phone number so we can contact you about the event and
