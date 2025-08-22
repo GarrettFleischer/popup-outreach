@@ -1,53 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
-import { Event } from "@/utils/supabase/types";
+import { useEvent } from "@/contexts/EventContext";
 
 export default function EventPage() {
-  const params = useParams();
   const router = useRouter();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const { event, isLoading, error } = useEvent();
 
-  useEffect(() => {
-    async function fetchEvent() {
-      if (!params.slug || Array.isArray(params.slug)) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("*")
-          .eq("url_slug", params.slug)
-          .single();
-
-        if (error) {
-          console.error("Error fetching event:", error);
-          if (error.code === "PGRST116") {
-            router.push("/");
-          }
-        } else {
-          // Check if event is archived
-          if (data.archived) {
-            router.push("/");
-            return;
-          }
-          setEvent(data);
-        }
-      } catch (error) {
-        console.error("Error fetching event:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchEvent();
-  }, [params.slug, supabase, router]);
-
-  if (loading) {
+  // Handle loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
@@ -55,12 +17,13 @@ export default function EventPage() {
     );
   }
 
-  if (!event) {
+  // Handle error state
+  if (error || !event) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Event Not Found
+            {error || "Event Not Found"}
           </h1>
           <Link
             href="/"
@@ -71,6 +34,12 @@ export default function EventPage() {
         </div>
       </div>
     );
+  }
+
+  // Check if event is archived
+  if (event.archived) {
+    router.push("/");
+    return null;
   }
 
   return (

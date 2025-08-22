@@ -15,6 +15,8 @@ import {
   type SavedSubmission,
 } from "@/utils/supabase/actions/actions";
 import { predefinedThemes, type Theme } from "@/utils/supabase/types";
+import { createClient } from "@/utils/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -180,6 +182,89 @@ export default function EditEventPage() {
     }
   }, [eventId, loadEvent]);
 
+  // Set up realtime subscriptions for live updates
+  useEffect(() => {
+    if (!eventId) return;
+
+    const supabase = createClient();
+    const channels: RealtimeChannel[] = [];
+
+    // Subscribe to event changes
+    const eventChannel = supabase
+      .channel(`admin-event:${eventId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "events",
+          filter: `id=eq.${eventId}`,
+        },
+        (payload) => {
+          console.log("Admin event realtime update:", payload);
+          if (payload.eventType === "UPDATE") {
+            // Update local event state with new data
+            setEvent((prevEvent) => {
+              if (prevEvent && payload.new) {
+                return { ...prevEvent, ...payload.new };
+              }
+              return prevEvent;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    channels.push(eventChannel);
+
+    // Subscribe to attendee changes
+    const attendeesChannel = supabase
+      .channel(`admin-attendees:${eventId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "attendees",
+          filter: `event_id=eq.${eventId}`,
+        },
+        (payload) => {
+          console.log("Admin attendees realtime update:", payload);
+          loadEventData();
+        }
+      )
+      .subscribe();
+
+    channels.push(attendeesChannel);
+
+    // Subscribe to saved submissions changes
+    const savedChannel = supabase
+      .channel(`admin-saved:${eventId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "saved",
+          filter: `event_id=eq.${eventId}`,
+        },
+        (payload) => {
+          console.log("Admin saved submissions realtime update:", payload);
+          loadEventData();
+        }
+      )
+      .subscribe();
+
+    channels.push(savedChannel);
+
+    // Cleanup function
+    return () => {
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [eventId, loadEventData]);
+
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -190,7 +275,7 @@ export default function EditEventPage() {
       const endDateTime = new Date(`${editForm.endDate}T${editForm.endTime}`);
 
       if (endDateTime <= startDateTime) {
-        alert("End date and time must be after start date and time");
+        alert("End date and time must be after start date/time");
         setIsSaving(false);
         return;
       }
@@ -227,8 +312,7 @@ export default function EditEventPage() {
       });
 
       alert("Event updated successfully!");
-      // Reload the event data to reflect changes
-      await loadEvent();
+      // No need to reload - realtime updates will handle this automatically
     } catch (error) {
       console.error("Error updating event:", error);
       alert("Failed to update event. Please try again.");

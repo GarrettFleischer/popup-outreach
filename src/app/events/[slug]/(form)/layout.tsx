@@ -108,7 +108,7 @@ export default function EventLayout({ children }: EventLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <EventProvider event={event}>{children}</EventProvider>
+      <EventProvider eventSlug={event.url_slug}>{children}</EventProvider>
     </div>
   );
 }

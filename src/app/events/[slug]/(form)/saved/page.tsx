@@ -72,7 +72,12 @@ export default function EventSavedPage() {
   };
 
   if (!event) {
-    return null; // This should never happen due to layout validation
+    return (
+      <div className="text-center text-white">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+        <p>Loading event...</p>
+      </div>
+    );
   }
 
   if (success) {
