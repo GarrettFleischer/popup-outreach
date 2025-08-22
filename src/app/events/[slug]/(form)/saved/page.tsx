@@ -163,6 +163,7 @@ export default function EventSavedPage() {
               required
               aria-required="true"
               aria-describedby="saved-first-name-help"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your first name"
             />
@@ -188,6 +189,7 @@ export default function EventSavedPage() {
               required
               aria-required="true"
               aria-describedby="saved-last-name-help"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your last name"
             />
@@ -214,6 +216,7 @@ export default function EventSavedPage() {
               required
               aria-required="true"
               aria-describedby="saved-phone-help"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your phone number"
             />
@@ -239,6 +242,7 @@ export default function EventSavedPage() {
               value={formData.email}
               onChange={handleInputChange}
               aria-describedby="saved-email-help"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your email address (optional)"
             />
