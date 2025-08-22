@@ -148,14 +148,14 @@ export default function EventsManagementTab() {
     const date = new Date(dateString);
     const endDate = endDateString ? new Date(endDateString) : null;
 
-    const dateStr = date.toLocaleDateString("en-US", {
+    const startDateStr = date.toLocaleDateString("en-US", {
       weekday: "short",
       year: "numeric",
       month: "short",
       day: "numeric",
     });
 
-    const timeStr = date.toLocaleTimeString("en-US", {
+    const startTimeStr = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       timeZoneName: "short",
@@ -167,10 +167,27 @@ export default function EventsManagementTab() {
         minute: "2-digit",
         timeZoneName: "short",
       });
-      return `${dateStr} (${timeStr} - ${endTimeStr})`;
+
+      // Check if it's a multi-day event
+      const startDateOnly = date.toDateString();
+      const endDateOnly = endDate.toDateString();
+
+      if (startDateOnly !== endDateOnly) {
+        // Multi-day event: show both dates
+        const endDateStr = endDate.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        return `${startDateStr} (${startTimeStr}) - ${endDateStr} (${endTimeStr})`;
+      } else {
+        // Same day event: show only times
+        return `${startDateStr} (${startTimeStr} - ${endTimeStr})`;
+      }
     }
 
-    return `${dateStr} (${timeStr})`;
+    return `${startDateStr} (${startTimeStr})`;
   };
 
   if (isLoading) {
