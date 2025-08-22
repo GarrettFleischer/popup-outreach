@@ -49,7 +49,7 @@ export default function EditEventPage() {
     grand_prize: "",
   });
 
-  const [isStylingExpanded, setIsStylingExpanded] = useState(false);
+  const [isStylingExpanded, setIsStylingExpanded] = useState(true);
 
   // Helper function to ensure end date/time is valid
   const ensureValidEndDateTime = (
@@ -85,6 +85,19 @@ export default function EditEventPage() {
       gradient_through_color: theme.colors.through,
       gradient_to_color: theme.colors.to,
     }));
+  };
+
+  const handleStylingToggle = () => {
+    const newExpanded = !isStylingExpanded;
+    setIsStylingExpanded(newExpanded);
+
+    // Save to local storage for this specific event
+    if (eventId) {
+      localStorage.setItem(
+        `event-styling-expanded-${eventId}`,
+        JSON.stringify(newExpanded)
+      );
+    }
   };
 
   const getCurrentTheme = (): Theme | null => {
@@ -179,6 +192,14 @@ export default function EditEventPage() {
   useEffect(() => {
     if (eventId) {
       loadEvent();
+
+      // Load styling expansion state from local storage
+      const storedExpanded = localStorage.getItem(
+        `event-styling-expanded-${eventId}`
+      );
+      if (storedExpanded !== null) {
+        setIsStylingExpanded(JSON.parse(storedExpanded));
+      }
     }
   }, [eventId, loadEvent]);
 
@@ -638,7 +659,7 @@ export default function EditEventPage() {
                     </h3>
                     <button
                       type="button"
-                      onClick={() => setIsStylingExpanded(!isStylingExpanded)}
+                      onClick={handleStylingToggle}
                       className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer"
                     >
                       {isStylingExpanded ? (
