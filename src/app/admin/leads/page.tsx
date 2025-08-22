@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/Button";
 import { LeadsTable } from "@/components/LeadsTable";
 import { LeadDialog, type LeadFormData } from "@/components/LeadDialog";
@@ -63,6 +65,12 @@ export default function LeadsManagement() {
 
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+
+  // Initialize Supabase client for real-time
+  const supabase = createClient();
+
+  // Debounced refresh state to prevent excessive API calls
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadLeads = useCallback(async () => {
     try {
@@ -153,6 +161,95 @@ export default function LeadsManagement() {
       loadLeads();
     }
   }, [pageSize, user, loadLeads]);
+
+  // Set up real-time subscriptions for live updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channels: RealtimeChannel[] = [];
+
+    // Subscribe to saved table changes (leads)
+    const savedChannel = supabase
+      .channel("leads-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "saved",
+        },
+        (payload) => {
+          console.log("Leads realtime update:", payload);
+          // Only refresh if not currently loading or refreshing
+          if (!isLoading && !isPageLoading && !isRefreshing) {
+            setIsRefreshing(true);
+            // Debounce the refresh to prevent excessive API calls
+            setTimeout(() => {
+              loadLeads();
+              setIsRefreshing(false);
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
+
+    channels.push(savedChannel);
+
+    // Subscribe to profiles table changes (for user assignment updates)
+    const profilesChannel = supabase
+      .channel("profiles-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+        },
+        (payload) => {
+          console.log("Profiles realtime update:", payload);
+          // Refresh profiles data when there are changes
+          loadProfiles();
+        }
+      )
+      .subscribe();
+
+    channels.push(profilesChannel);
+
+    // Subscribe to events table changes (for event information updates)
+    const eventsChannel = supabase
+      .channel("events-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "events",
+        },
+        (payload) => {
+          console.log("Events realtime update:", payload);
+          // Refresh events data when there are changes
+          loadEvents();
+          // Also refresh leads data since leads display event information
+          if (!isLoading && !isPageLoading && !isRefreshing) {
+            setIsRefreshing(true);
+            setTimeout(() => {
+              loadLeads();
+              setIsRefreshing(false);
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
+
+    channels.push(eventsChannel);
+
+    // Cleanup function
+    return () => {
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [user, supabase, loadLeads, isLoading, isPageLoading, isRefreshing]);
 
   // Filter leads based on checkbox states and user permissions
   const filteredLeads = leads;
@@ -259,6 +356,12 @@ export default function LeadsManagement() {
           <p className="text-gray-600 mt-2">
             Manage and track leads converted from saved event submissions
           </p>
+          <div className="flex items-center mt-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+            <span className="text-xs text-green-600 font-medium">
+              Live updates enabled
+            </span>
+          </div>
         </div>
         <div className="flex space-x-3">
           {/* Only show create button for super admins (level 0) */}
@@ -358,6 +461,9 @@ export default function LeadsManagement() {
             Showing {filteredLeads.length} of {totalCount} leads
             {isPageLoading && (
               <span className="ml-2 text-blue-600">Loading...</span>
+            )}
+            {isRefreshing && (
+              <span className="ml-2 text-green-600">Updating...</span>
             )}
           </div>
         </div>
