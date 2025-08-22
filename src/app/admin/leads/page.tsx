@@ -9,7 +9,7 @@ import { LeadDialog, type LeadFormData } from "@/components/LeadDialog";
 import { isSuperAdmin } from "@/utils/supabase/types/users";
 
 import {
-  getAllLeads,
+  getLeadsWithPagination,
   createLead,
   updateLead,
   getAllProfiles,
@@ -53,6 +53,13 @@ export default function LeadsManagement() {
   const [hideAssigned, setHideAssigned] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [isPageLoading, setIsPageLoading] = useState(false);
+
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
 
@@ -68,15 +75,50 @@ export default function LeadsManagement() {
     loadEvents();
   }, [user, router]);
 
+  // Reload leads when filters change
+  useEffect(() => {
+    if (user) {
+      setCurrentPage(1); // Reset to first page when filters change
+      loadLeads();
+    }
+  }, [hideContacted, hideAssigned]);
+
+  // Reload leads when page changes
+  useEffect(() => {
+    if (user && currentPage > 1) {
+      loadLeads();
+    }
+  }, [currentPage]);
+
+  // Reload leads when page size changes
+  useEffect(() => {
+    if (user) {
+      setCurrentPage(1);
+      loadLeads();
+    }
+  }, [pageSize]);
+
   const loadLeads = async () => {
     try {
       // RLS policies now handle permission-based filtering at the database level
-      const allLeads = await getAllLeads();
-      setLeads(allLeads);
+      const response = await getLeadsWithPagination({
+        page: currentPage,
+        pageSize,
+        search: searchQuery,
+        hideContacted,
+        hideAssigned,
+        assignedUserId: isSuperAdmin(user?.profile) ? null : user?.id || null,
+      });
+
+      setLeads(response.leads);
+      setTotalCount(response.totalCount);
+      setTotalPages(response.totalPages);
+      setCurrentPage(response.currentPage);
     } catch (error) {
       console.error("Error loading leads:", error);
     } finally {
       setIsLoading(false);
+      setIsPageLoading(false); // Reset loading state
     }
   };
 
@@ -99,46 +141,15 @@ export default function LeadsManagement() {
   };
 
   // Filter leads based on checkbox states and user permissions
-  const filteredLeads = leads.filter((lead) => {
-    // Always apply contacted filter
-    if (hideContacted && lead.contacted) {
-      return false;
-    }
+  const filteredLeads = leads;
 
-    // Only apply assigned filter for super admins (level 0)
-    // Level 1 users (lead managers) only see their own leads, so this filter doesn't make sense
-    if (isSuperAdmin(user?.profile) && hideAssigned && lead.assigned_user_id) {
-      return false;
-    }
-
-    // Apply search filter if search query exists
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      const searchableFields = [
-        // Lead name
-        lead.first_name?.toLowerCase() || "",
-        lead.last_name?.toLowerCase() || "",
-        // Age type
-        lead.age_range?.toLowerCase() || "",
-        // Source name (event name)
-        lead.events?.name?.toLowerCase() || "",
-        // Contact info
-        lead.email?.toLowerCase() || "",
-        lead.phone?.toLowerCase() || "",
-        lead.address?.toLowerCase() || "",
-        // Assigned to
-        lead.profiles?.first_name?.toLowerCase() || "",
-        lead.profiles?.last_name?.toLowerCase() || "",
-        // Referred by
-        lead.referrer_profiles?.first_name?.toLowerCase() || "",
-        lead.referrer_profiles?.last_name?.toLowerCase() || "",
-      ];
-
-      return searchableFields.some((field) => field.includes(query));
-    }
-
-    return true;
-  });
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (isPageLoading) return; // Prevent multiple simultaneous requests
+    setCurrentPage(page);
+    setIsPageLoading(true);
+    loadLeads();
+  };
 
   // Selection handlers
   const handleSelectLead = (leadId: string, selected: boolean) => {
@@ -252,13 +263,60 @@ export default function LeadsManagement() {
 
           {/* Search Box */}
           <div className="flex-1 max-w-md">
-            <input
-              type="text"
-              placeholder="Search leads by name, age, source, contact info, assigned to, or referred by..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by any field..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    loadLeads();
+                  }
+                }}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              />
+              <button
+                onClick={loadLeads}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
+                type="button"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-gray-900">Show:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+                loadLeads();
+              }}
+              disabled={isPageLoading}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-sm text-gray-900">per page</span>
           </div>
 
           <label className="flex items-center space-x-2">
@@ -283,20 +341,102 @@ export default function LeadsManagement() {
             </label>
           )}
           <div className="text-sm text-gray-500">
-            Showing {filteredLeads.length} of {leads.length} leads
+            Showing {filteredLeads.length} of {totalCount} leads
+            {isPageLoading && (
+              <span className="ml-2 text-blue-600">Loading...</span>
+            )}
           </div>
         </div>
       </div>
 
-      <LeadsTable
-        leads={filteredLeads}
-        onEditLead={handleEditLead}
-        selectedLeads={selectedLeads}
-        onSelectLead={handleSelectLead}
-        onSelectAll={handleSelectAll}
-        onBulkAssign={handleBulkAssign}
-        profiles={profiles}
-      />
+      {/* Loading Spinner for Table */}
+      {isPageLoading && (
+        <div className="bg-white rounded-lg shadow p-8 mb-6">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="text-gray-600">Searching leads...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leads Table - Only show when not loading */}
+      {!isPageLoading && (
+        <LeadsTable
+          leads={filteredLeads}
+          onEditLead={handleEditLead}
+          selectedLeads={selectedLeads}
+          onSelectLead={handleSelectLead}
+          onSelectAll={handleSelectAll}
+          onBulkAssign={handleBulkAssign}
+          profiles={profiles}
+        />
+      )}
+
+      {/* Pagination Controls - Only show when not loading and there are pages */}
+      {!isPageLoading && totalPages > 1 && (
+        <div className="bg-white rounded-lg shadow p-4 mt-6">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
+              leads
+              {isPageLoading && (
+                <span className="ml-2 text-blue-600">Loading...</span>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isPageLoading}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={isPageLoading}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isPageLoading}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LeadDialog
         isOpen={isDialogOpen}

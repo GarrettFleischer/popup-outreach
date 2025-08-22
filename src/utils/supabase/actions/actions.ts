@@ -286,6 +286,282 @@ export async function getAllLeads(): Promise<Tables<"saved">[]> {
   return leads || [];
 }
 
+export async function getLeadsWithPagination({
+  page = 1,
+  pageSize = 20,
+  search = "",
+  hideContacted = false,
+  hideAssigned = false,
+  assignedUserId = null,
+}: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  hideContacted?: boolean;
+  hideAssigned?: boolean;
+  assignedUserId?: string | null;
+}): Promise<{
+  leads: Tables<"saved">[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  const supabase = createClient();
+
+  // If no search term, use simple pagination with filters
+  if (!search.trim()) {
+    let query = supabase.from("saved").select(
+      `
+        *,
+        profiles:assigned_user_id (
+          user_id,
+          first_name,
+          last_name
+        ),
+        referrer_profiles:referrer_user_id (
+          user_id,
+          first_name,
+          last_name
+        ),
+        events:event_id (
+          id,
+          name,
+          url_slug
+        )
+      `,
+      { count: "exact" }
+    );
+
+    // Apply filters
+    if (hideContacted) {
+      query = query.eq("contacted", false);
+    }
+
+    if (hideAssigned) {
+      query = query.is("assigned_user_id", null);
+    }
+
+    if (assignedUserId) {
+      query = query.eq("assigned_user_id", assignedUserId);
+    }
+
+    // Get total count for pagination
+    const { count: totalCount, error: countError } = await query;
+
+    if (countError) {
+      console.error("Error counting leads:", countError);
+      throw new Error("Failed to count leads");
+    }
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data: leads, error: leadsError } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (leadsError) {
+      console.error("Error fetching leads:", leadsError);
+      throw new Error("Failed to fetch leads");
+    }
+
+    const totalPages = Math.ceil((totalCount || 0) / pageSize);
+
+    return {
+      leads: leads || [],
+      totalCount: totalCount || 0,
+      totalPages,
+      currentPage: page,
+    };
+  }
+
+  // For search with joined tables, we need to use multiple queries
+  const searchTerm = search.trim().toLowerCase();
+  let allLeads: Tables<"saved">[] = [];
+
+  // Create a function to apply common filters to any query
+  const applyFilters = (query: any) => {
+    if (hideContacted) {
+      query = query.eq("contacted", false);
+    }
+
+    if (hideAssigned) {
+      query = query.is("assigned_user_id", null);
+    }
+
+    if (assignedUserId) {
+      query = query.eq("assigned_user_id", assignedUserId);
+    }
+
+    return query;
+  };
+
+  // Common select statement for all queries
+  const selectStatement = `
+    *,
+    profiles:assigned_user_id (
+      user_id,
+      first_name,
+      last_name
+    ),
+    referrer_profiles:referrer_user_id (
+      user_id,
+      first_name,
+      last_name
+    ),
+    events:event_id (
+      id,
+      name,
+      url_slug
+    )
+  `;
+
+  try {
+    // 1. Search main fields
+    const mainQuery = applyFilters(
+      supabase.from("saved").select(selectStatement)
+    );
+
+    // Build main field search conditions
+    const mainSearchConditions = [
+      `first_name.ilike.%${searchTerm}%`,
+      `last_name.ilike.%${searchTerm}%`,
+      `email.ilike.%${searchTerm}%`,
+      `phone.ilike.%${searchTerm}%`,
+      `address.ilike.%${searchTerm}%`,
+    ];
+
+    mainQuery.or(mainSearchConditions.join(","));
+    const { data: mainResults, error: mainError } = await mainQuery;
+
+    if (mainError) {
+      console.error("Error searching main fields:", mainError);
+    } else if (mainResults) {
+      allLeads = [...allLeads, ...mainResults];
+    }
+
+    // 2. Search age_range if applicable
+    if (["child", "young adult", "adult"].includes(searchTerm)) {
+      const ageValue = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1);
+      const ageQuery = applyFilters(
+        supabase.from("saved").select(selectStatement).eq("age_range", ageValue)
+      );
+
+      const { data: ageResults, error: ageError } = await ageQuery;
+
+      if (ageError) {
+        console.error("Error searching age_range:", ageError);
+      } else if (ageResults) {
+        allLeads = [...allLeads, ...ageResults];
+      }
+    }
+
+    // 3. Search event names (source)
+    const eventNameQuery = applyFilters(
+      supabase.from("saved").select(selectStatement)
+    );
+
+    // We need to use a different approach for joined tables
+    const { data: allSavedWithEvents, error: eventQueryError } =
+      await eventNameQuery;
+
+    if (eventQueryError) {
+      console.error("Error fetching leads with events:", eventQueryError);
+    } else if (allSavedWithEvents) {
+      // Filter client-side for event name matches
+      const eventMatches = allSavedWithEvents.filter(
+        (lead) =>
+          lead.events &&
+          lead.events.name &&
+          lead.events.name.toLowerCase().includes(searchTerm)
+      );
+
+      allLeads = [...allLeads, ...eventMatches];
+    }
+
+    // 4. Search assigned user names
+    const { data: allSavedWithProfiles, error: profilesQueryError } =
+      await applyFilters(supabase.from("saved").select(selectStatement));
+
+    if (profilesQueryError) {
+      console.error("Error fetching leads with profiles:", profilesQueryError);
+    } else if (allSavedWithProfiles) {
+      // Filter client-side for assigned user name matches
+      const assignedMatches = allSavedWithProfiles.filter(
+        (lead) =>
+          lead.profiles &&
+          ((lead.profiles.first_name &&
+            lead.profiles.first_name.toLowerCase().includes(searchTerm)) ||
+            (lead.profiles.last_name &&
+              lead.profiles.last_name.toLowerCase().includes(searchTerm)))
+      );
+
+      allLeads = [...allLeads, ...assignedMatches];
+    }
+
+    // 5. Search referrer user names
+    const { data: allSavedWithReferrers, error: referrersQueryError } =
+      await applyFilters(
+        supabase
+          .from("saved")
+          .select(selectStatement)
+          .not("referrer_user_id", "is", null)
+      );
+
+    if (referrersQueryError) {
+      console.error(
+        "Error fetching leads with referrers:",
+        referrersQueryError
+      );
+    } else if (allSavedWithReferrers) {
+      // Filter client-side for referrer name matches
+      const referrerMatches = allSavedWithReferrers.filter(
+        (lead) =>
+          lead.referrer_profiles &&
+          ((lead.referrer_profiles.first_name &&
+            lead.referrer_profiles.first_name
+              .toLowerCase()
+              .includes(searchTerm)) ||
+            (lead.referrer_profiles.last_name &&
+              lead.referrer_profiles.last_name
+                .toLowerCase()
+                .includes(searchTerm)))
+      );
+
+      allLeads = [...allLeads, ...referrerMatches];
+    }
+
+    // Deduplicate by ID
+    const uniqueLeads = Array.from(
+      new Map(allLeads.map((lead) => [lead.id, lead])).values()
+    );
+
+    // Handle pagination manually
+    const totalCount = uniqueLeads.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // Sort by created_at (newest first) and paginate
+    const paginatedLeads = uniqueLeads
+      .sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      })
+      .slice((page - 1) * pageSize, page * pageSize);
+
+    return {
+      leads: paginatedLeads,
+      totalCount,
+      totalPages,
+      currentPage: page,
+    };
+  } catch (error) {
+    console.error("Error searching leads:", error);
+    throw new Error("Failed to search leads");
+  }
+}
+
 export async function createLead(leadData: {
   event_id: string;
   first_name: string;
