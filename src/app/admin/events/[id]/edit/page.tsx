@@ -785,7 +785,7 @@ export default function EditEventPage() {
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Custom Title (overrides event name)
+                            Title
                           </label>
                           <input
                             type="text"
@@ -803,7 +803,7 @@ export default function EditEventPage() {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Custom Subtitle
+                            Fancy Text
                           </label>
                           <input
                             type="text"
@@ -815,13 +815,13 @@ export default function EditEventPage() {
                               }))
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                            placeholder="Enter custom subtitle"
+                            placeholder="Enter fancy text"
                           />
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-900 mb-2">
-                            Custom Description
+                            Description
                           </label>
                           <textarea
                             rows={3}
@@ -833,7 +833,7 @@ export default function EditEventPage() {
                               }))
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                            placeholder="Enter custom description"
+                            placeholder="Enter description"
                           />
                         </div>
 
@@ -841,8 +841,8 @@ export default function EditEventPage() {
                           <label className="block text-sm font-medium text-gray-900 mb-2">
                             Giveaways Text
                           </label>
-                          <input
-                            type="text"
+                          <textarea
+                            rows={3}
                             value={editForm.giveaways_text}
                             onChange={(e) =>
                               setEditForm((prev) => ({
@@ -854,8 +854,8 @@ export default function EditEventPage() {
                             placeholder="GIVEAWAYS CASH PRIZES & GIFT CARDS"
                           />
                           <p className="text-sm text-gray-500 mt-1">
-                            Custom text for the giveaways section. Leave empty
-                            to use the default.
+                            Text for the giveaways section. Leave empty to use
+                            the default.
                           </p>
                         </div>
 

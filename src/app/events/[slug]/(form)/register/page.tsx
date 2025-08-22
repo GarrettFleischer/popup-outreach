@@ -135,7 +135,10 @@ export default function EventRegisterPage() {
             </p>
           )}
           {event.custom_description && (
-            <p className="text-2xl font-bold text-white mb-2 drop-shadow-lg">
+            <p
+              className="text-2xl font-bold text-white mb-2 drop-shadow-lg"
+              style={{ whiteSpace: "pre-line" }}
+            >
               {event.custom_description}
             </p>
           )}
@@ -224,7 +227,10 @@ export default function EventRegisterPage() {
           {event.giveaways_text && (
             <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-4">
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-800 mb-2">
+                <p
+                  className="text-lg font-bold text-gray-800 mb-2"
+                  style={{ whiteSpace: "pre-line" }}
+                >
                   {event.giveaways_text}
                 </p>
                 {event.grand_prize && (
