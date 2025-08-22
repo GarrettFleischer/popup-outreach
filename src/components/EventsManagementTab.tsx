@@ -173,14 +173,14 @@ export default function EventsManagementTab() {
       const endDateOnly = endDate.toDateString();
 
       if (startDateOnly !== endDateOnly) {
-        // Multi-day event: show both dates
+        // Multi-day event: show both dates stacked vertically
         const endDateStr = endDate.toLocaleDateString("en-US", {
           weekday: "short",
           year: "numeric",
           month: "short",
           day: "numeric",
         });
-        return `${startDateStr} (${startTimeStr}) - ${endDateStr} (${endTimeStr})`;
+        return `${startDateStr} (${startTimeStr})\n${endDateStr} (${endTimeStr})`;
       } else {
         // Same day event: show only times
         return `${startDateStr} (${startTimeStr} - ${endTimeStr})`;
@@ -298,11 +298,13 @@ export default function EventsManagementTab() {
                       </div>
                     </td>
                     <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      className={`px-6 py-4 text-sm ${
                         event.archived ? "text-gray-600" : "text-gray-900"
                       }`}
                     >
-                      {formatDate(event.date, event.end_date)}
+                      <div className="whitespace-pre-line">
+                        {formatDate(event.date, event.end_date)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
