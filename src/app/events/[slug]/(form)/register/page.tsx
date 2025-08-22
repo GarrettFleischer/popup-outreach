@@ -147,7 +147,23 @@ export default function EventRegisterPage() {
 
       {/* Registration Form */}
       <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-orange-200">
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+        >
+          <div aria-hidden="true" className="hidden">
+            <input type="text" name="username" autoComplete="username" />
+            <input
+              type="password"
+              name="password"
+              autoComplete="new-password"
+            />
+          </div>
           {/* Name Fields */}
           <div>
             <label
@@ -166,6 +182,15 @@ export default function EventRegisterPage() {
               aria-required="true"
               aria-describedby="first-name-help"
               autoComplete="new-name"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              readOnly
+              onFocus={(e) => e.currentTarget.removeAttribute("readonly")}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your first name"
             />
@@ -191,6 +216,15 @@ export default function EventRegisterPage() {
               aria-required="true"
               aria-describedby="last-name-help"
               autoComplete="new-name"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              readOnly
+              onFocus={(e) => e.currentTarget.removeAttribute("readonly")}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your last name"
             />
@@ -217,6 +251,15 @@ export default function EventRegisterPage() {
               aria-required="true"
               aria-describedby="phone-help"
               autoComplete="new-tel"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              readOnly
+              onFocus={(e) => e.currentTarget.removeAttribute("readonly")}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your phone number"
             />
