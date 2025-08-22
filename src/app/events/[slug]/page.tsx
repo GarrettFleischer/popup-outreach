@@ -43,12 +43,21 @@ export default function EventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{
+        background: `linear-gradient(to bottom, ${
+          event.gradient_from_color || "#f97316"
+        }, ${event.gradient_through_color || "#ea580c"}, ${
+          event.gradient_to_color || "#dc2626"
+        })`,
+      }}
+    >
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Back to events link */}
         <Link
           href="/"
-          className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-700 mb-8"
+          className="inline-flex items-center text-sm text-white hover:text-orange-200 mb-8"
         >
           <svg
             className="mr-2 h-4 w-4"

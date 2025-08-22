@@ -57,12 +57,12 @@ export function EventProvider({
 
       if (eventError) {
         throw eventError;
+      } else {
+        setEvent(data);
       }
-
-      setEvent(data);
     } catch (err) {
-      console.error("Error fetching event:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch event");
+      console.error("Error fetching event:", JSON.stringify(err));
+      setError("Failed to fetch event");
     } finally {
       setIsLoading(false);
     }
