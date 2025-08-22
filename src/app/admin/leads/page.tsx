@@ -249,7 +249,16 @@ export default function LeadsManagement() {
         supabase.removeChannel(channel);
       });
     };
-  }, [user, supabase, loadLeads, isLoading, isPageLoading, isRefreshing]);
+  }, [
+    user,
+    supabase,
+    loadLeads,
+    loadEvents,
+    loadProfiles,
+    isLoading,
+    isPageLoading,
+    isRefreshing,
+  ]);
 
   // Filter leads based on checkbox states and user permissions
   const filteredLeads = leads;

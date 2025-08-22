@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEvent } from "@/contexts/EventContext";
 
@@ -9,8 +8,6 @@ interface EventLayoutProps {
 }
 
 export default function EventLayout({ children }: EventLayoutProps) {
-  const params = useParams();
-  const router = useRouter();
   const { event } = useEvent();
 
   if (!event) {
