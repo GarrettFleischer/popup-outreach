@@ -158,14 +158,12 @@ export default function EventsManagementTab() {
     const startTimeStr = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZoneName: "short",
     });
 
     if (endDate && endDate.getTime() !== date.getTime()) {
       const endTimeStr = endDate.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
-        timeZoneName: "short",
       });
 
       // Check if it's a multi-day event
@@ -173,21 +171,37 @@ export default function EventsManagementTab() {
       const endDateOnly = endDate.toDateString();
 
       if (startDateOnly !== endDateOnly) {
-        // Multi-day event: show both dates stacked vertically
+        // Multi-day event: show both dates stacked vertically with timezone
         const endDateStr = endDate.toLocaleDateString("en-US", {
           weekday: "short",
           year: "numeric",
           month: "short",
           day: "numeric",
         });
-        return `${startDateStr} (${startTimeStr})\n${endDateStr} (${endTimeStr})`;
+        const timezone = date
+          .toLocaleTimeString("en-US", {
+            timeZoneName: "short",
+          })
+          .split(" ")[2]; // Extract just the timezone part
+        return `${startDateStr} (${startTimeStr} ${timezone})\n${endDateStr} (${endTimeStr} ${timezone})`;
       } else {
-        // Same day event: show only times
-        return `${startDateStr} (${startTimeStr} - ${endTimeStr})`;
+        // Same day event: show date on first line, time range on second line with timezone
+        const timezone = date
+          .toLocaleTimeString("en-US", {
+            timeZoneName: "short",
+          })
+          .split(" ")[2]; // Extract just the timezone part
+        return `${startDateStr}\n(${startTimeStr} - ${endTimeStr} ${timezone})`;
       }
     }
 
-    return `${startDateStr} (${startTimeStr})`;
+    // Single time event: show with timezone
+    const timezone = date
+      .toLocaleTimeString("en-US", {
+        timeZoneName: "short",
+      })
+      .split(" ")[2]; // Extract just the timezone part
+    return `${startDateStr} (${startTimeStr} ${timezone})`;
   };
 
   if (isLoading) {
@@ -240,29 +254,29 @@ export default function EventsManagementTab() {
             <p className="text-sm">Create your first event to get started</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4 min-w-[150px]">
                     Event
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[280px]">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 min-w-[80px]">
                     Attendees
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
                     Saved
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
                     Leads
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 min-w-[100px]">
                     Link
                   </th>
                 </tr>
@@ -277,7 +291,7 @@ export default function EventsManagementTab() {
                     onClick={() => handleEditEvent(event)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
+                      <div className="min-w-0">
                         <div
                           className={`text-sm font-medium ${
                             event.archived ? "text-gray-600" : "text-gray-900"
@@ -302,7 +316,7 @@ export default function EventsManagementTab() {
                         event.archived ? "text-gray-600" : "text-gray-900"
                       }`}
                     >
-                      <div className="whitespace-pre-line">
+                      <div className="whitespace-pre-line break-words min-w-0">
                         {formatDate(event.date, event.end_date)}
                       </div>
                     </td>

@@ -92,14 +92,12 @@ export default function Home() {
     const startTimeStr = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZoneName: "short",
     });
 
     if (endDate && endDate.getTime() !== date.getTime()) {
       const endTimeStr = endDate.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
-        timeZoneName: "short",
       });
 
       // Check if it's a multi-day event
@@ -107,21 +105,37 @@ export default function Home() {
       const endDateOnly = endDate.toDateString();
 
       if (startDateOnly !== endDateOnly) {
-        // Multi-day event: show both dates
+        // Multi-day event: show both dates with timezone
         const endDateStr = endDate.toLocaleDateString("en-US", {
           weekday: "short",
           year: "numeric",
           month: "short",
           day: "numeric",
         });
-        return `${startDateStr} (${startTimeStr})\n${endDateStr} (${endTimeStr})`;
+        const timezone = date
+          .toLocaleTimeString("en-US", {
+            timeZoneName: "short",
+          })
+          .split(" ")[2]; // Extract just the timezone part
+        return `${startDateStr} (${startTimeStr} ${timezone})\n${endDateStr} (${endTimeStr} ${timezone})`;
       } else {
-        // Same day event: show only times
-        return `${startDateStr} (${startTimeStr} - ${endTimeStr})`;
+        // Same day event: show date on first line, time range on second line with timezone
+        const timezone = date
+          .toLocaleTimeString("en-US", {
+            timeZoneName: "short",
+          })
+          .split(" ")[2]; // Extract just the timezone part
+        return `${startDateStr}\n(${startTimeStr} - ${endTimeStr} ${timezone})`;
       }
     }
 
-    return `${startDateStr} (${startTimeStr})`;
+    // Single time event: show with timezone
+    const timezone = date
+      .toLocaleTimeString("en-US", {
+        timeZoneName: "short",
+      })
+      .split(" ")[2]; // Extract just the timezone part
+    return `${startDateStr} (${startTimeStr} ${timezone})`;
   };
 
   return (

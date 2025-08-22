@@ -20,17 +20,29 @@ export default function EventLayout({ children }: EventLayoutProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       {/* Navigation Links */}
-      <div className="absolute top-4 right-4 flex gap-3">
+      <div className="absolute top-0 left-4 z-50">
         <Link
           href={`/events/${event.url_slug}`}
-          className="text-white/70 hover:text-white text-xs font-medium transition-colors"
+          className="text-white/70 hover:text-white transition-colors p-2"
         >
-          Back to Event
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
         </Link>
       </div>
 
       {/* Main Content */}
-      {children}
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }
