@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { RegistrationForm } from "@/utils/supabase/types";
 import { useEvent } from "@/contexts/EventContext";
@@ -10,6 +10,15 @@ export default function EventRegisterPage() {
   const { event } = useEvent();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [randomNames, setRandomNames] = useState<{
+    first: string;
+    last: string;
+    phone: string;
+  }>({
+    first: "",
+    last: "",
+    phone: "",
+  });
   const supabase = createClient();
 
   const [formData, setFormData] = useState<RegistrationForm>({
@@ -18,14 +27,37 @@ export default function EventRegisterPage() {
     phone: "",
   });
 
+  // Generate random names on component mount to prevent autofill
+  useEffect(() => {
+    setRandomNames({
+      first: `first_${Math.random().toString(36).substr(2, 9)}`,
+      last: `last_${Math.random().toString(36).substr(2, 9)}`,
+      phone: `phone_${Math.random().toString(36).substr(2, 9)}`,
+    });
+  }, []);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Map random names back to actual field names
+    const fieldMap: { [key: string]: string } = {
+      [randomNames.first]: "first_name",
+      [randomNames.last]: "last_name",
+      [randomNames.phone]: "phone",
+    };
+
+    const actualField = fieldMap[name];
+    if (actualField) {
+      setFormData((prev) => ({
+        ...prev,
+        [actualField]: value,
+      }));
+    }
+  };
+
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.removeAttribute("readOnly");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,6 +180,23 @@ export default function EventRegisterPage() {
       {/* Registration Form */}
       <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-orange-200">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Hidden honeypot fields to trick autofill */}
+          <div
+            style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
+          >
+            <input
+              type="text"
+              name="fake_first_name"
+              autoComplete="given-name"
+            />
+            <input
+              type="text"
+              name="fake_last_name"
+              autoComplete="family-name"
+            />
+            <input type="tel" name="fake_phone" autoComplete="tel" />
+          </div>
+
           {/* Name Fields */}
           <div>
             <label
@@ -159,13 +208,17 @@ export default function EventRegisterPage() {
             <input
               type="text"
               id="first_name"
-              name="first_name"
+              name={randomNames.first}
               value={formData.first_name}
               onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              readOnly
               required
               aria-required="true"
               aria-describedby="first-name-help"
-              autoComplete="off"
+              autoComplete="new-password"
+              data-lpignore="true"
+              data-form-type="other"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your first name"
             />
@@ -184,13 +237,17 @@ export default function EventRegisterPage() {
             <input
               type="text"
               id="last_name"
-              name="last_name"
+              name={randomNames.last}
               value={formData.last_name}
               onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              readOnly
               required
               aria-required="true"
               aria-describedby="last-name-help"
-              autoComplete="off"
+              autoComplete="new-password"
+              data-lpignore="true"
+              data-form-type="other"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your last name"
             />
@@ -210,13 +267,17 @@ export default function EventRegisterPage() {
             <input
               type="tel"
               id="phone"
-              name="phone"
+              name={randomNames.phone}
               value={formData.phone}
               onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              readOnly
               required
               aria-required="true"
               aria-describedby="phone-help"
-              autoComplete="off"
+              autoComplete="new-password"
+              data-lpignore="true"
+              data-form-type="other"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your phone number"
             />
