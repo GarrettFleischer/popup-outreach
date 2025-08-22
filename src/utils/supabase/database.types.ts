@@ -80,6 +80,7 @@ export type Database = {
           custom_title: string | null
           date: string
           description: string | null
+          end_date: string
           gradient_from_color: string | null
           gradient_through_color: string | null
           gradient_to_color: string | null
@@ -98,6 +99,7 @@ export type Database = {
           custom_title?: string | null
           date: string
           description?: string | null
+          end_date: string
           gradient_from_color?: string | null
           gradient_through_color?: string | null
           gradient_to_color?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           custom_title?: string | null
           date?: string
           description?: string | null
+          end_date?: string
           gradient_from_color?: string | null
           gradient_through_color?: string | null
           gradient_to_color?: string | null

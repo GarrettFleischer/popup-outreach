@@ -34,6 +34,8 @@ export default function EditEventPage() {
     name: "",
     date: "",
     time: "12:00",
+    endDate: "",
+    endTime: "13:00",
     description: "",
     archived: false,
     gradient_from_color: "#f97316",
@@ -46,6 +48,30 @@ export default function EditEventPage() {
   });
 
   const [isStylingExpanded, setIsStylingExpanded] = useState(false);
+
+  // Helper function to ensure end date/time is valid
+  const ensureValidEndDateTime = (
+    startDate: string,
+    startTime: string,
+    endDate: string,
+    endTime: string
+  ) => {
+    const startDateTime = new Date(`${startDate}T${startTime}`);
+    const endDateTime = new Date(`${endDate}T${endTime}`);
+
+    if (endDateTime <= startDateTime) {
+      // End time is before or equal to start time, adjust it
+      const adjustedEndDateTime = new Date(
+        startDateTime.getTime() + 60 * 60 * 1000
+      ); // Add 1 hour
+      return {
+        endDate: adjustedEndDateTime.toISOString().split("T")[0],
+        endTime: adjustedEndDateTime.toTimeString().slice(0, 5),
+      };
+    }
+
+    return { endDate, endTime };
+  };
 
   const handleThemeChange = (theme: Theme) => {
     // Don't change colors if "Custom" is selected
@@ -113,10 +139,21 @@ export default function EditEventPage() {
         minute: "2-digit",
       });
 
+      // Convert UTC end date to local date and time for the form
+      const utcEndDate = new Date(foundEvent.end_date || foundEvent.date);
+      const localEndDate = utcEndDate.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+      const localEndTime = utcEndDate.toLocaleTimeString("en-US", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
       setEditForm({
         name: foundEvent.name,
         date: localDate,
         time: localTime,
+        endDate: localEndDate,
+        endTime: localEndTime,
         description: foundEvent.description || "",
         archived: foundEvent.archived || false,
         gradient_from_color: foundEvent.gradient_from_color || "#3B82F6",
@@ -148,6 +185,16 @@ export default function EditEventPage() {
     setIsSaving(true);
 
     try {
+      // Validate that end date/time is after start date/time
+      const startDateTime = new Date(`${editForm.date}T${editForm.time}`);
+      const endDateTime = new Date(`${editForm.endDate}T${editForm.endTime}`);
+
+      if (endDateTime <= startDateTime) {
+        alert("End date and time must be after start date and time");
+        setIsSaving(false);
+        return;
+      }
+
       // Combine date and time and convert to UTC
       // The user enters time in their local timezone, so we need to create a local datetime
       // and then convert it to UTC for storage
@@ -156,9 +203,18 @@ export default function EditEventPage() {
       // Convert local datetime to UTC (this handles the timezone conversion correctly)
       const utcDateTime = new Date(localDateTime.toISOString());
 
+      // Combine end date and time and convert to UTC
+      const localEndDateTime = new Date(
+        `${editForm.endDate}T${editForm.endTime}`
+      );
+
+      // Convert local end datetime to UTC (this handles the timezone conversion correctly)
+      const utcEndDateTime = new Date(localEndDateTime.toISOString());
+
       await updateEvent(eventId, {
         name: editForm.name,
         date: utcDateTime.toISOString(),
+        end_date: utcEndDateTime.toISOString(),
         description: editForm.description,
         archived: editForm.archived,
         gradient_from_color: editForm.gradient_from_color,
@@ -301,12 +357,33 @@ export default function EditEventPage() {
                       type="date"
                       required
                       value={editForm.date}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          date: e.target.value,
-                        }))
-                      }
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        setEditForm((prev) => {
+                          // Auto-set end date to match start date if it's not already set
+                          let newEndDate = prev.endDate || newDate;
+
+                          // If end date is now before start date, set it to start date
+                          if (newEndDate < newDate) {
+                            newEndDate = newDate;
+                          }
+
+                          // Ensure end time is valid for the new dates
+                          const { endTime } = ensureValidEndDateTime(
+                            newDate,
+                            prev.time,
+                            newEndDate,
+                            prev.endTime
+                          );
+
+                          return {
+                            ...prev,
+                            date: newDate,
+                            endDate: newEndDate,
+                            endTime,
+                          };
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                     />
                   </div>
@@ -326,12 +403,126 @@ export default function EditEventPage() {
                       type="time"
                       required
                       value={editForm.time}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          time: e.target.value,
-                        }))
+                      onChange={(e) => {
+                        const newTime = e.target.value;
+                        setEditForm((prev) => {
+                          // Calculate end time 1 hour after start time
+                          const [hours, minutes] = newTime
+                            .split(":")
+                            .map(Number);
+                          const endHours = (hours + 1) % 24;
+                          const endTime = `${endHours
+                            .toString()
+                            .padStart(2, "0")}:${minutes
+                            .toString()
+                            .padStart(2, "0")}`;
+
+                          // Check if current end time would be before start time
+                          let newEndTime = prev.endTime || endTime;
+                          if (prev.date === prev.endDate) {
+                            // Same date, check if end time is before start time
+                            const [endHours, endMinutes] = newEndTime
+                              .split(":")
+                              .map(Number);
+                            if (
+                              endHours < hours ||
+                              (endHours === hours && endMinutes <= minutes)
+                            ) {
+                              newEndTime = endTime; // Set to 1 hour after start time
+                            }
+                          }
+
+                          // Ensure end date/time is valid
+                          const { endDate, endTime: validEndTime } =
+                            ensureValidEndDateTime(
+                              prev.date,
+                              newTime,
+                              prev.endDate,
+                              newEndTime
+                            );
+
+                          return {
+                            ...prev,
+                            time: newTime,
+                            endDate,
+                            endTime: validEndTime,
+                          };
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editForm.endDate}
+                      onChange={(e) => {
+                        const newEndDate = e.target.value;
+                        setEditForm((prev) => {
+                          // Ensure end date is not before start date
+                          if (newEndDate < prev.date) {
+                            return prev; // Don't update if invalid
+                          }
+
+                          return {
+                            ...prev,
+                            endDate: newEndDate,
+                          };
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      End Time * (
+                      {
+                        new Date()
+                          .toLocaleTimeString("en-US", {
+                            timeZoneName: "short",
+                          })
+                          .split(" ")[2]
                       }
+                      )
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={editForm.endTime}
+                      onChange={(e) => {
+                        const newEndTime = e.target.value;
+                        setEditForm((prev) => {
+                          // If same date, ensure end time is after start time
+                          if (prev.date === prev.endDate) {
+                            const [startHours, startMinutes] = prev.time
+                              .split(":")
+                              .map(Number);
+                            const [endHours, endMinutes] = newEndTime
+                              .split(":")
+                              .map(Number);
+
+                            if (
+                              endHours < startHours ||
+                              (endHours === startHours &&
+                                endMinutes <= startMinutes)
+                            ) {
+                              return prev; // Don't update if invalid
+                            }
+                          }
+
+                          return {
+                            ...prev,
+                            endTime: newEndTime,
+                          };
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                     />
                   </div>

@@ -191,7 +191,19 @@ export function LeadDialog({
                 <option value="">Select an event</option>
                 {events.map((event) => (
                   <option key={event.id} value={event.id}>
-                    {event.name} - {new Date(event.date).toLocaleDateString()}
+                    {event.name} - {new Date(event.date).toLocaleDateString()}{" "}
+                    {event.end_date && event.end_date !== event.date
+                      ? `(${new Date(event.date).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })} - ${new Date(event.end_date).toLocaleTimeString(
+                          [],
+                          { hour: "2-digit", minute: "2-digit" }
+                        )})`
+                      : `(${new Date(event.date).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })})`}
                   </option>
                 ))}
               </select>

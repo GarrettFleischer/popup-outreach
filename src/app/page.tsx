@@ -97,6 +97,20 @@ export default function Home() {
                           day: "numeric",
                           year: "numeric",
                         })}
+                        {event.end_date && event.end_date !== event.date && (
+                          <span className="ml-1">
+                            {" "}
+                            {new Date(event.date).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            -{" "}
+                            {new Date(event.end_date).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        )}
                       </span>
                     </div>
 

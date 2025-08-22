@@ -118,6 +118,17 @@ export default function EventPage() {
                   hour12: true,
                   timeZoneName: "short",
                 })}
+                {event.end_date && event.end_date !== event.date && (
+                  <>
+                    {" - "}
+                    {new Date(event.end_date).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                      timeZoneName: "short",
+                    })}
+                  </>
+                )}
               </span>
             </div>
 
