@@ -51,7 +51,8 @@ export default function LeadsManagement() {
   // Filter states
   const [hideContacted, setHideContacted] = useState(false);
   const [hideAssigned, setHideAssigned] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +70,7 @@ export default function LeadsManagement() {
       const response = await getLeadsWithPagination({
         page: currentPage,
         pageSize,
-        search: searchQuery,
+        search: appliedSearchQuery,
         hideContacted,
         hideAssigned,
         assignedUserId: isSuperAdmin(user?.profile) ? null : user?.id || null,
@@ -85,7 +86,14 @@ export default function LeadsManagement() {
       setIsLoading(false);
       setIsPageLoading(false); // Reset loading state
     }
-  }, [currentPage, pageSize, searchQuery, hideContacted, hideAssigned, user]);
+  }, [
+    currentPage,
+    pageSize,
+    appliedSearchQuery,
+    hideContacted,
+    hideAssigned,
+    user,
+  ]);
 
   const loadProfiles = useCallback(async () => {
     try {
@@ -124,6 +132,12 @@ export default function LeadsManagement() {
       loadLeads();
     }
   }, [hideContacted, hideAssigned, user, loadLeads]);
+
+  // Function to apply search
+  const applySearch = () => {
+    setAppliedSearchQuery(searchInput);
+    setCurrentPage(1); // Reset to first page when search changes
+  };
 
   // Reload leads when page changes
   useEffect(() => {
@@ -267,17 +281,17 @@ export default function LeadsManagement() {
               <input
                 type="text"
                 placeholder="Search by any field..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    loadLeads();
+                    applySearch();
                   }
                 }}
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               />
               <button
-                onClick={loadLeads}
+                onClick={applySearch}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
                 type="button"
               >
