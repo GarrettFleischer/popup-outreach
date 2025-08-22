@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SavedForm } from "@/utils/supabase/types";
 import { useEvent } from "@/contexts/EventContext";
@@ -10,19 +10,6 @@ export default function EventSavedPage() {
   const { event } = useEvent();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [randomNames, setRandomNames] = useState<{
-    first: string;
-    last: string;
-    phone: string;
-    email: string;
-    age: string;
-  }>({
-    first: "",
-    last: "",
-    phone: "",
-    email: "",
-    age: "",
-  });
   const supabase = createClient();
 
   const [formData, setFormData] = useState<SavedForm>({
@@ -34,53 +21,22 @@ export default function EventSavedPage() {
     age_range: "Adult",
   });
 
-  // Generate random names on component mount to prevent autofill
-  useEffect(() => {
-    setRandomNames({
-      first: `first_${Math.random().toString(36).substr(2, 9)}`,
-      last: `last_${Math.random().toString(36).substr(2, 9)}`,
-      phone: `phone_${Math.random().toString(36).substr(2, 9)}`,
-      email: `email_${Math.random().toString(36).substr(2, 9)}`,
-      age: `age_${Math.random().toString(36).substr(2, 9)}`,
-    });
-  }, []);
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-
-    // Map random names back to actual field names
-    const fieldMap: { [key: string]: string } = {
-      [randomNames.first]: "first_name",
-      [randomNames.last]: "last_name",
-      [randomNames.phone]: "phone",
-      [randomNames.email]: "email",
-      [randomNames.age]: "age_range",
-    };
-
-    const actualField = fieldMap[name];
-
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
-      if (name === "needs_ride") {
-        setFormData((prev) => ({
-          ...prev,
-          needs_ride: checked,
-        }));
-      }
-    } else if (actualField) {
       setFormData((prev) => ({
         ...prev,
-        [actualField]: value,
+        [name]: checked,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
       }));
     }
-  };
-
-  const handleInputFocus = (
-    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    e.target.removeAttribute("readOnly");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,24 +146,6 @@ export default function EventSavedPage() {
       {/* Registration Form */}
       <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-orange-200">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Hidden honeypot fields to trick autofill */}
-          <div
-            style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
-          >
-            <input
-              type="text"
-              name="fake_first_name"
-              autoComplete="given-name"
-            />
-            <input
-              type="text"
-              name="fake_last_name"
-              autoComplete="family-name"
-            />
-            <input type="tel" name="fake_phone" autoComplete="tel" />
-            <input type="email" name="fake_email" autoComplete="email" />
-          </div>
-
           {/* Name Fields */}
           <div>
             <label
@@ -219,17 +157,13 @@ export default function EventSavedPage() {
             <input
               type="text"
               id="first_name"
-              name={randomNames.first}
+              name="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              readOnly
               required
               aria-required="true"
               aria-describedby="saved-first-name-help"
-              autoComplete="new-password"
-              data-lpignore="true"
-              data-form-type="other"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your first name"
             />
@@ -249,17 +183,13 @@ export default function EventSavedPage() {
             <input
               type="text"
               id="last_name"
-              name={randomNames.last}
+              name="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              readOnly
               required
               aria-required="true"
               aria-describedby="saved-last-name-help"
-              autoComplete="new-password"
-              data-lpignore="true"
-              data-form-type="other"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your last name"
             />
@@ -280,17 +210,13 @@ export default function EventSavedPage() {
             <input
               type="tel"
               id="phone"
-              name={randomNames.phone}
+              name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              readOnly
               required
               aria-required="true"
               aria-describedby="saved-phone-help"
-              autoComplete="new-password"
-              data-lpignore="true"
-              data-form-type="other"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your phone number"
             />
@@ -312,15 +238,11 @@ export default function EventSavedPage() {
             <input
               type="email"
               id="email"
-              name={randomNames.email}
+              name="email"
               value={formData.email}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              readOnly
               aria-describedby="saved-email-help"
-              autoComplete="new-password"
-              data-lpignore="true"
-              data-form-type="other"
+              autoComplete="off"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 font-medium text-gray-900"
               placeholder="Enter your email address (optional)"
             />
@@ -340,16 +262,12 @@ export default function EventSavedPage() {
             </label>
             <select
               id="age_range"
-              name={randomNames.age}
+              name="age_range"
               value={formData.age_range}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
               required
               aria-required="true"
               aria-describedby="saved-age-range-help"
-              autoComplete="new-password"
-              data-lpignore="true"
-              data-form-type="other"
               className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 font-medium text-gray-900 bg-white"
             >
               <option value="Child">Child</option>
