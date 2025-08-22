@@ -81,6 +81,7 @@ export type Database = {
           date: string
           description: string | null
           end_date: string
+          giveaways_text: string | null
           gradient_from_color: string | null
           gradient_through_color: string | null
           gradient_to_color: string | null
@@ -100,6 +101,7 @@ export type Database = {
           date: string
           description?: string | null
           end_date: string
+          giveaways_text?: string | null
           gradient_from_color?: string | null
           gradient_through_color?: string | null
           gradient_to_color?: string | null
@@ -119,6 +121,7 @@ export type Database = {
           date?: string
           description?: string | null
           end_date?: string
+          giveaways_text?: string | null
           gradient_from_color?: string | null
           gradient_through_color?: string | null
           gradient_to_color?: string | null

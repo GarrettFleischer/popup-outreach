@@ -47,6 +47,7 @@ export default function EditEventPage() {
     custom_subtitle: "",
     custom_description: "",
     grand_prize: "",
+    giveaways_text: "",
   });
 
   const [isStylingExpanded, setIsStylingExpanded] = useState(true);
@@ -178,6 +179,7 @@ export default function EditEventPage() {
         custom_subtitle: foundEvent.custom_subtitle || "",
         custom_description: foundEvent.custom_description || "",
         grand_prize: foundEvent.grand_prize || "",
+        giveaways_text: foundEvent.giveaways_text || "",
       });
 
       loadEventData();
@@ -330,9 +332,9 @@ export default function EditEventPage() {
         custom_subtitle: editForm.custom_subtitle,
         custom_description: editForm.custom_description,
         grand_prize: editForm.grand_prize,
+        giveaways_text: editForm.giveaways_text,
       });
 
-      alert("Event updated successfully!");
       // No need to reload - realtime updates will handle this automatically
     } catch (error) {
       console.error("Error updating event:", error);
@@ -833,6 +835,28 @@ export default function EditEventPage() {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                             placeholder="Enter custom description"
                           />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                            Giveaways Text
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.giveaways_text}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                giveaways_text: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                            placeholder="GIVEAWAYS CASH PRIZES & GIFT CARDS"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            Custom text for the giveaways section. Leave empty
+                            to use the default.
+                          </p>
                         </div>
 
                         <div>

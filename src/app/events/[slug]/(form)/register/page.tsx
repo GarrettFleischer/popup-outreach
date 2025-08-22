@@ -220,32 +220,31 @@ export default function EventRegisterPage() {
             </div>
           </div>
 
-          {/* Prizes Section */}
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-4">
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                GIVEAWAYS
-              </h3>
-              <p className="text-lg font-bold text-gray-800 mb-2">
-                CASH PRIZES & GIFT CARDS
-              </p>
-              {event.grand_prize && (
-                <div className="relative inline-block">
-                  <div className="bg-white border-2 border-white rounded-full px-6 py-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      {event.grand_prize}
-                    </span>
+          {/* Prizes Section - Only show if giveaways text exists */}
+          {event.giveaways_text && (
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-4">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-800 mb-2">
+                  {event.giveaways_text}
+                </p>
+                {event.grand_prize && (
+                  <div className="relative inline-block">
+                    <div className="bg-white border-2 border-white rounded-full px-6 py-2">
+                      <span className="text-lg font-bold text-gray-900">
+                        {event.grand_prize}
+                      </span>
+                    </div>
+                    <div className="absolute top-1/2 -translate-y-1/2 -left-4 text-yellow-500 text-2xl">
+                      →
+                    </div>
+                    <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-yellow-500 text-2xl">
+                      ←
+                    </div>
                   </div>
-                  <div className="absolute top-1/2 -translate-y-1/2 -left-4 text-yellow-500 text-2xl">
-                    →
-                  </div>
-                  <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-yellow-500 text-2xl">
-                    ←
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Age Disclaimer */}
           <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">

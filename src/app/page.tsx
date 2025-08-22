@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { Event } from "@/utils/supabase/types";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import Header from "@/components/Header";
 
 export default function Home() {
@@ -11,29 +12,63 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("*")
-          .eq("archived", false)
-          .order("date", { ascending: false });
+  const fetchEvents = async () => {
+    try {
+      const now = new Date();
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("archived", false)
+        .gte("end_date", now.toISOString())
+        .order("date", { ascending: false });
 
-        if (error) {
-          console.error("Error fetching events:", error);
-        } else {
-          setEvents(data || []);
-        }
-      } catch (error) {
+      if (error) {
         console.error("Error fetching events:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        setEvents(data || []);
       }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchEvents();
-  }, [supabase]);
+  }, []);
+
+  // Set up realtime subscriptions for live updates
+  useEffect(() => {
+    const channels: RealtimeChannel[] = [];
+
+    // Subscribe to all event changes
+    const eventsChannel = supabase
+      .channel("homepage-events")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "events",
+        },
+        (payload) => {
+          console.log("Homepage events realtime update:", payload);
+          // Refresh events when any event is created, updated, or deleted
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    channels.push(eventsChannel);
+
+    // Cleanup function
+    return () => {
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [supabase, fetchEvents]);
 
   if (loading) {
     return (
@@ -43,6 +78,52 @@ export default function Home() {
     );
   }
 
+  const formatEventDate = (dateString: string, endDateString?: string) => {
+    const date = new Date(dateString);
+    const endDate = endDateString ? new Date(endDateString) : null;
+
+    const startDateStr = date.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+    const startTimeStr = date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    if (endDate && endDate.getTime() !== date.getTime()) {
+      const endTimeStr = endDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      });
+
+      // Check if it's a multi-day event
+      const startDateOnly = date.toDateString();
+      const endDateOnly = endDate.toDateString();
+
+      if (startDateOnly !== endDateOnly) {
+        // Multi-day event: show both dates
+        const endDateStr = endDate.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        return `${startDateStr} (${startTimeStr})\n${endDateStr} (${endTimeStr})`;
+      } else {
+        // Same day event: show only times
+        return `${startDateStr} (${startTimeStr} - ${endTimeStr})`;
+      }
+    }
+
+    return `${startDateStr} (${startTimeStr})`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -51,6 +132,9 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Upcoming Events
           </h1>
+          <p className="text-lg text-gray-600">
+            Events happening now and in the future
+          </p>
         </div>
 
         {events.length === 0 ? (
@@ -87,31 +171,15 @@ export default function Home() {
               >
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
                   <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200 mb-3">
                         {event.name}
                       </h3>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {new Date(event.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                        {event.end_date && event.end_date !== event.date && (
-                          <span className="ml-1">
-                            {" "}
-                            {new Date(event.date).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}{" "}
-                            -{" "}
-                            {new Date(event.end_date).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        )}
-                      </span>
+                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <div className="whitespace-pre-line text-center">
+                          {formatEventDate(event.date, event.end_date)}
+                        </div>
+                      </div>
                     </div>
 
                     {event.description && (
