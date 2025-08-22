@@ -350,20 +350,22 @@ export default function LeadsManagement() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Leads Management</h1>
-          <p className="text-gray-600 mt-2">
+      <div className="space-y-4 lg:space-y-0 lg:flex lg:justify-between lg:items-start mb-6">
+        <div className="space-y-3">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+            Leads Management
+          </h1>
+          <p className="text-gray-600 text-sm lg:text-base">
             Manage and track leads converted from saved event submissions
           </p>
-          <div className="flex items-center mt-1">
+          <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
             <span className="text-xs text-green-600 font-medium">
               Live updates enabled
             </span>
           </div>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex justify-start lg:justify-end">
           {/* Only show create button for super admins (level 0) */}
           {isSuperAdmin(user?.profile) && (
             <Button variant="primary" onClick={handleCreateLead}>
@@ -375,11 +377,12 @@ export default function LeadsManagement() {
 
       {/* Filter Controls */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex items-center space-x-6">
+        {/* Mobile: Stack vertically, Desktop: Horizontal layout */}
+        <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:space-x-6">
           <h3 className="text-sm font-medium text-gray-900">Filters:</h3>
 
-          {/* Search Box */}
-          <div className="flex-1 max-w-md">
+          {/* Search Box - Full width on mobile, constrained on desktop */}
+          <div className="w-full lg:flex-1 lg:max-w-md">
             <div className="relative">
               <input
                 type="text"
@@ -415,49 +418,61 @@ export default function LeadsManagement() {
             </div>
           </div>
 
-          {/* Page Size Selector */}
-          <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-900">Show:</label>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-                loadLeads();
-              }}
-              disabled={isPageLoading}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span className="text-sm text-gray-900">per page</span>
+          {/* Controls Row - Stack on mobile, horizontal on desktop */}
+          <div className="space-y-3 lg:space-y-0 lg:flex lg:items-center lg:space-x-6">
+            {/* Page Size Selector */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-900">Show:</label>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                  loadLeads();
+                }}
+                disabled={isPageLoading}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-900">per page</span>
+            </div>
+
+            {/* Checkboxes Row - Stack on mobile, horizontal on desktop */}
+            <div className="space-y-2 lg:space-y-0 lg:flex lg:items-center lg:space-x-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={hideContacted}
+                  onChange={(e) => setHideContacted(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">
+                  Hide contacted leads
+                </span>
+              </label>
+              {/* Only show "Hide assigned leads" filter for super admins (level 0) */}
+              {isSuperAdmin(user?.profile) && (
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={hideAssigned}
+                    onChange={(e) => setHideAssigned(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">
+                    Hide assigned leads
+                  </span>
+                </label>
+              )}
+            </div>
           </div>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={hideContacted}
-              onChange={(e) => setHideContacted(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="text-sm text-gray-700">Hide contacted leads</span>
-          </label>
-          {/* Only show "Hide assigned leads" filter for super admins (level 0) */}
-          {isSuperAdmin(user?.profile) && (
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={hideAssigned}
-                onChange={(e) => setHideAssigned(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <span className="text-sm text-gray-700">Hide assigned leads</span>
-            </label>
-          )}
-          <div className="text-sm text-gray-500">
+          {/* Results Info - Full width on mobile, right-aligned on desktop */}
+          <div className="text-sm text-gray-500 lg:text-right lg:flex-shrink-0">
             Showing {filteredLeads.length} of {totalCount} leads
             {isPageLoading && (
               <span className="ml-2 text-blue-600">Loading...</span>

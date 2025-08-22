@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,7 @@ export default function AdminLayout({
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // No need to check permissions here - middleware handles it
   // This effect is kept for any future admin-specific logic
@@ -47,15 +48,18 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
+          {/* Mobile: Stack vertically, Desktop: Horizontal layout */}
+          <div className="py-4 lg:py-0 lg:h-16 lg:flex lg:justify-between lg:items-center">
+            {/* Logo and Navigation - Stack on mobile, horizontal on desktop */}
+            <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:space-x-8 mb-4 lg:mb-0">
               <Link
                 href="/"
-                className="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors duration-200 cursor-pointer"
+                className="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors duration-200 cursor-pointer block"
               >
                 Reno Revival
               </Link>
-              <div className="flex space-x-2">
+              {/* Desktop Navigation - always visible on desktop */}
+              <div className="hidden lg:flex flex-wrap gap-2 lg:gap-0 lg:space-x-2">
                 {isSuperAdmin && (
                   <Button
                     variant={
@@ -112,26 +116,121 @@ export default function AdminLayout({
                 </Button>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 bg-gray-100 px-4 py-2 rounded-full">
-                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {user.profile.first_name?.[0]}
-                    {user.profile.last_name?.[0]}
+
+            {/* Mobile menu button - only show on mobile */}
+            <div className="lg:hidden absolute top-4 right-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2"
+              >
+                {isMobileMenuOpen ? (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                )}
+              </Button>
+            </div>
+
+            {/* Mobile Menu - User Info, Navigation, and Logout */}
+            <div
+              className={`space-y-3 lg:space-y-0 lg:flex lg:items-center lg:space-x-4 ${
+                isMobileMenuOpen ? "block" : "hidden lg:block"
+              }`}
+            >
+              {/* Mobile Navigation - only visible when mobile menu is open */}
+              <div className="lg:hidden space-y-2">
+                {isSuperAdmin && (
+                  <Button
+                    variant={
+                      isActiveRoute("/admin/dashboard") ? "primary" : "outline"
+                    }
+                    onClick={() => router.push("/admin/dashboard")}
+                    className="w-full transition-all duration-200"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Dashboard
+                  </Button>
+                )}
+                <Button
+                  variant={
+                    isActiveRoute("/admin/leads") ? "primary" : "outline"
+                  }
+                  onClick={() => router.push("/admin/leads")}
+                  className="w-full transition-all duration-200"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  Leads
+                </Button>
+              </div>
+
+              <div
+                className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                onClick={handleLogout}
+                title="Click to logout"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-semibold">
+                      {user.profile.first_name?.[0]}
+                      {user.profile.last_name?.[0]}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {user.profile.first_name} {user.profile.last_name}
                   </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">
-                  {user.profile.first_name} {user.profile.last_name}
-                </span>
-              </div>
-              <Button
-                onClick={handleLogout}
-                variant="danger"
-                size="sm"
-                className="hover:shadow-md transition-shadow"
-              >
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 text-gray-500 ml-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -143,8 +242,7 @@ export default function AdminLayout({
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                   />
                 </svg>
-                Logout
-              </Button>
+              </div>
             </div>
           </div>
         </div>
