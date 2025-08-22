@@ -208,22 +208,6 @@ export default function EventSavedPage() {
             <input type="email" name="fake_email" autoComplete="email" />
           </div>
 
-          {/* LastPass specific prevention - add these before real fields */}
-          <input
-            type="text"
-            name="username"
-            autoComplete="username"
-            style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
-            data-lpignore="true"
-          />
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
-            data-lpignore="true"
-          />
-
           {/* Name Fields */}
           <div>
             <label
@@ -233,7 +217,7 @@ export default function EventSavedPage() {
               First Name
             </label>
             <input
-              type="search"
+              type="text"
               id="first_name"
               name={randomNames.first}
               value={formData.first_name}
@@ -263,7 +247,7 @@ export default function EventSavedPage() {
               Last Name
             </label>
             <input
-              type="search"
+              type="text"
               id="last_name"
               name={randomNames.last}
               value={formData.last_name}
