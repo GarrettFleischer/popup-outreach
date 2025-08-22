@@ -57,7 +57,7 @@ export default function AdminLayout({
                   <Button
                     variant="ghost"
                     onClick={() => router.push("/admin/dashboard")}
-                    className="text-gray-700 hover:text-gray-900"
+                    className="text-gray-700 hover:text-gray-900 cursor-pointer"
                   >
                     Dashboard
                   </Button>
@@ -65,7 +65,7 @@ export default function AdminLayout({
                 <Button
                   variant="ghost"
                   onClick={() => router.push("/admin/leads")}
-                  className="text-gray-700 hover:text-gray-900"
+                  className="text-gray-700 hover:text-gray-900 cursor-pointer"
                 >
                   Leads
                 </Button>
