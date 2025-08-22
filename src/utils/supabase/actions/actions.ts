@@ -381,7 +381,7 @@ export async function getLeadsWithPagination({
   let allLeads: Tables<"saved">[] = [];
 
   // Create a function to apply common filters to any query
-  const applyFilters = (query: any) => {
+  const applyFilters = (query: ReturnType<typeof supabase.from>) => {
     if (hideContacted) {
       query = query.eq("contacted", false);
     }
@@ -443,17 +443,29 @@ export async function getLeadsWithPagination({
 
     // 2. Search age_range if applicable
     if (["child", "young adult", "adult"].includes(searchTerm)) {
-      const ageValue = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1);
-      const ageQuery = applyFilters(
-        supabase.from("saved").select(selectStatement).eq("age_range", ageValue)
-      );
+      const ageValue =
+        searchTerm === "child"
+          ? "Child"
+          : searchTerm === "young adult"
+          ? "Young Adult"
+          : searchTerm === "adult"
+          ? "Adult"
+          : null;
+      if (ageValue) {
+        const ageQuery = applyFilters(
+          supabase
+            .from("saved")
+            .select(selectStatement)
+            .eq("age_range", ageValue)
+        );
 
-      const { data: ageResults, error: ageError } = await ageQuery;
+        const { data: ageResults, error: ageError } = await ageQuery;
 
-      if (ageError) {
-        console.error("Error searching age_range:", ageError);
-      } else if (ageResults) {
-        allLeads = [...allLeads, ...ageResults];
+        if (ageError) {
+          console.error("Error searching age_range:", ageError);
+        } else if (ageResults) {
+          allLeads = [...allLeads, ...ageResults];
+        }
       }
     }
 
@@ -471,7 +483,7 @@ export async function getLeadsWithPagination({
     } else if (allSavedWithEvents) {
       // Filter client-side for event name matches
       const eventMatches = allSavedWithEvents.filter(
-        (lead) =>
+        (lead: Tables<"saved"> & { events?: { name: string } | null }) =>
           lead.events &&
           lead.events.name &&
           lead.events.name.toLowerCase().includes(searchTerm)
@@ -489,7 +501,11 @@ export async function getLeadsWithPagination({
     } else if (allSavedWithProfiles) {
       // Filter client-side for assigned user name matches
       const assignedMatches = allSavedWithProfiles.filter(
-        (lead) =>
+        (
+          lead: Tables<"saved"> & {
+            profiles?: { first_name: string; last_name: string } | null;
+          }
+        ) =>
           lead.profiles &&
           ((lead.profiles.first_name &&
             lead.profiles.first_name.toLowerCase().includes(searchTerm)) ||
@@ -517,7 +533,14 @@ export async function getLeadsWithPagination({
     } else if (allSavedWithReferrers) {
       // Filter client-side for referrer name matches
       const referrerMatches = allSavedWithReferrers.filter(
-        (lead) =>
+        (
+          lead: Tables<"saved"> & {
+            referrer_profiles?: {
+              first_name: string;
+              last_name: string;
+            } | null;
+          }
+        ) =>
           lead.referrer_profiles &&
           ((lead.referrer_profiles.first_name &&
             lead.referrer_profiles.first_name

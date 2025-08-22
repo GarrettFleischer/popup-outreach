@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -63,42 +63,7 @@ export default function LeadsManagement() {
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-
-    // Middleware handles admin authorization, so we just need to check if user exists
-    loadLeads();
-    loadProfiles();
-    loadEvents();
-  }, [user, router]);
-
-  // Reload leads when filters change
-  useEffect(() => {
-    if (user) {
-      setCurrentPage(1); // Reset to first page when filters change
-      loadLeads();
-    }
-  }, [hideContacted, hideAssigned]);
-
-  // Reload leads when page changes
-  useEffect(() => {
-    if (user && currentPage > 1) {
-      loadLeads();
-    }
-  }, [currentPage]);
-
-  // Reload leads when page size changes
-  useEffect(() => {
-    if (user) {
-      setCurrentPage(1);
-      loadLeads();
-    }
-  }, [pageSize]);
-
-  const loadLeads = async () => {
+  const loadLeads = useCallback(async () => {
     try {
       // RLS policies now handle permission-based filtering at the database level
       const response = await getLeadsWithPagination({
@@ -120,25 +85,60 @@ export default function LeadsManagement() {
       setIsLoading(false);
       setIsPageLoading(false); // Reset loading state
     }
-  };
+  }, [currentPage, pageSize, searchQuery, hideContacted, hideAssigned, user]);
 
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     try {
       const allProfiles = await getAllProfiles();
       setProfiles(allProfiles);
     } catch (error) {
       console.error("Error loading profiles:", error);
     }
-  };
+  }, []);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       const allEvents = await getEventsWithStats();
       setEvents(allEvents);
     } catch (error) {
       console.error("Error loading events:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+
+    // Middleware handles admin authorization, so we just need to check if user exists
+    loadLeads();
+    loadProfiles();
+    loadEvents();
+  }, [user, router, loadLeads, loadProfiles, loadEvents]);
+
+  // Reload leads when filters change
+  useEffect(() => {
+    if (user) {
+      setCurrentPage(1); // Reset to first page when filters change
+      loadLeads();
+    }
+  }, [hideContacted, hideAssigned, user, loadLeads]);
+
+  // Reload leads when page changes
+  useEffect(() => {
+    if (user && currentPage > 1) {
+      loadLeads();
+    }
+  }, [currentPage, user, loadLeads]);
+
+  // Reload leads when page size changes
+  useEffect(() => {
+    if (user) {
+      setCurrentPage(1);
+      loadLeads();
+    }
+  }, [pageSize, user, loadLeads]);
 
   // Filter leads based on checkbox states and user permissions
   const filteredLeads = leads;
