@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { ThemeDropdown } from "@/components/ui/ThemeDropdown";
+import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 import {
   getEventsWithStats,
   getEventAttendees,
@@ -958,10 +959,7 @@ export default function EditEventPage() {
                           </div>
                           <div className="text-center">
                             <span className="text-sm text-gray-600 font-mono">
-                              {attendee.phone.replace(
-                                /(\d{3})(\d{3})(\d{4})/,
-                                "($1) $2-$3"
-                              )}
+                              {formatPhoneNumber(attendee.phone)}
                             </span>
                           </div>
                           <div className="text-right">
@@ -1010,10 +1008,7 @@ export default function EditEventPage() {
                         </div>
                         <div className="text-center">
                           <span className="text-sm text-gray-600 font-mono block mb-1">
-                            {saved.phone.replace(
-                              /(\d{3})(\d{3})(\d{4})/,
-                              "($1) $2-$3"
-                            )}
+                            {formatPhoneNumber(saved.phone)}
                           </span>
                           {saved.email && (
                             <p className="text-sm text-gray-600">

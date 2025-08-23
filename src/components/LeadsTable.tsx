@@ -2,6 +2,7 @@ import React from "react";
 import { Tables } from "@/utils/supabase/database.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSuperAdmin, isLeadManager } from "@/utils/supabase/types/users";
+import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 
 type LeadWithEventInfo = Tables<"saved"> & {
   events?: {
@@ -255,7 +256,9 @@ export function LeadsTable({
                   >
                     <div className="text-sm text-gray-900">{lead.email}</div>
                     {lead.phone && (
-                      <div className="text-sm text-gray-500">{lead.phone}</div>
+                      <div className="text-sm text-gray-500">
+                        {formatPhoneNumber(lead.phone)}
+                      </div>
                     )}
                   </td>
                   <td
