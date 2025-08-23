@@ -1,24 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import {
   getUserEventAssignments,
   getAllEvents,
   assignUserToEvent,
   removeUserFromEvent,
+  EventAssignmentWithEvent,
 } from "@/utils/supabase/actions/actions";
 import { Tables } from "@/utils/supabase/database.types";
 
 type Event = Tables<"events">;
-type EventAssignment = Tables<"event_assignments"> & {
-  events: {
-    id: string;
-    name: string;
-    date: string;
-    url_slug: string;
-  };
-};
 
 interface EventAssignmentDialogProps {
   isOpen: boolean;
@@ -33,19 +26,15 @@ export default function EventAssignmentDialog({
   userId,
   userName,
 }: EventAssignmentDialogProps) {
-  const [assignments, setAssignments] = useState<EventAssignment[]>([]);
+  const [assignments, setAssignments] = useState<EventAssignmentWithEvent[]>(
+    []
+  );
   const [availableEvents, setAvailableEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen, userId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [assignmentsData, eventsData] = await Promise.all([
@@ -59,7 +48,13 @@ export default function EventAssignmentDialog({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadData();
+    }
+  }, [isOpen, loadData]);
 
   const handleAssignEvent = async (eventId: string) => {
     setIsAssigning(true);

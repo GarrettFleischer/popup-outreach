@@ -12,6 +12,15 @@ export type SavedSubmission = Tables<"saved">;
 
 export type EventAssignment = Tables<"event_assignments">;
 
+export type EventAssignmentWithEvent = Tables<"event_assignments"> & {
+  events: {
+    id: string;
+    name: string;
+    date: string;
+    url_slug: string;
+  };
+};
+
 export async function getEventsWithStats(
   includeArchived: boolean = false
 ): Promise<EventWithStats[]> {
@@ -778,7 +787,7 @@ export async function getAllProfilesWithPermissions(): Promise<
 // Event Assignment Functions
 export async function getUserEventAssignments(
   userId: string
-): Promise<EventAssignment[]> {
+): Promise<EventAssignmentWithEvent[]> {
   const supabase = createClient();
 
   const { data: assignments, error } = await supabase
