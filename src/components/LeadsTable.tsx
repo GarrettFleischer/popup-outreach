@@ -173,12 +173,18 @@ export function LeadsTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assigned To
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Referred By
-              </th>
+              {/* Only show Assigned To column for super admins (level 0) */}
+              {isSuperAdmin(user?.profile) && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Assigned To
+                </th>
+              )}
+              {/* Only show Referred By column for super admins (level 0) */}
+              {isSuperAdmin(user?.profile) && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Referred By
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -277,34 +283,40 @@ export function LeadsTable({
                       {lead.contacted ? "Contacted" : "Not Contacted"}
                     </span>
                   </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      isEditable ? "cursor-pointer" : "cursor-default"
-                    }`}
-                    onClick={() => isEditable && onEditLead?.(lead)}
-                  >
-                    <div className="text-sm text-gray-900">
-                      {lead.assigned_user_id
-                        ? lead.profiles
-                          ? `${lead.profiles.first_name} ${lead.profiles.last_name}`
-                          : "Assigned"
-                        : "Unassigned"}
-                    </div>
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      isEditable ? "cursor-pointer" : "cursor-default"
-                    }`}
-                    onClick={() => isEditable && onEditLead?.(lead)}
-                  >
-                    <div className="text-sm text-gray-900">
-                      {lead.referrer_user_id
-                        ? lead.referrer_profiles
-                          ? `${lead.referrer_profiles.first_name} ${lead.referrer_profiles.last_name}`
-                          : "Referred"
-                        : "Unknown"}
-                    </div>
-                  </td>
+                  {/* Only show Assigned To cell for super admins (level 0) */}
+                  {isSuperAdmin(user?.profile) && (
+                    <td
+                      className={`px-6 py-4 whitespace-nowrap ${
+                        isEditable ? "cursor-pointer" : "cursor-default"
+                      }`}
+                      onClick={() => isEditable && onEditLead?.(lead)}
+                    >
+                      <div className="text-sm text-gray-900">
+                        {lead.assigned_user_id
+                          ? lead.profiles
+                            ? `${lead.profiles.first_name} ${lead.profiles.last_name}`
+                            : "Assigned"
+                          : "Unassigned"}
+                      </div>
+                    </td>
+                  )}
+                  {/* Only show Referred By cell for super admins (level 0) */}
+                  {isSuperAdmin(user?.profile) && (
+                    <td
+                      className={`px-6 py-4 whitespace-nowrap ${
+                        isEditable ? "cursor-pointer" : "cursor-default"
+                      }`}
+                      onClick={() => isEditable && onEditLead?.(lead)}
+                    >
+                      <div className="text-sm text-gray-900">
+                        {lead.referrer_user_id
+                          ? lead.referrer_profiles
+                            ? `${lead.referrer_profiles.first_name} ${lead.referrer_profiles.last_name}`
+                            : "Referred"
+                          : "Unknown"}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               );
             })}
