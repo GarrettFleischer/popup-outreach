@@ -96,14 +96,7 @@ export default function LeadsManagement() {
       setIsLoading(false);
       setIsPageLoading(false); // Reset loading state
     }
-  }, [
-    currentPage,
-    pageSize,
-    appliedSearchQuery,
-    hideContacted,
-    hideAssigned,
-    user,
-  ]);
+  }, [currentPage, pageSize, appliedSearchQuery, hideContacted, hideAssigned]);
 
   const loadProfiles = useCallback(async () => {
     try {
