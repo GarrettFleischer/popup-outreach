@@ -3,17 +3,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
-import {
-  getAllProfilesWithPermissions,
-  updateUserPermission,
-} from "@/utils/supabase/actions/actions";
+import { GenericDropdown } from "@/components/ui/GenericDropdown";
+import { updateUserPermission } from "@/utils/supabase/actions/actions";
+import { getAllProfilesWithPermissions } from "@/utils/supabase/actions/actions";
 import { isSuperAdmin } from "@/utils/supabase/types/users";
+import EventAssignmentDialog from "./EventAssignmentDialog";
 
 type ProfileWithPermissions = {
   user_id: string;
   first_name: string;
   last_name: string;
-  email?: string;
   created_at: string | null;
   updated_at: string | null;
   profile_permissions: {
@@ -25,9 +24,16 @@ export default function UserManagementTab() {
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<ProfileWithPermissions[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [updatingPermissions, setUpdatingPermissions] = useState<Set<string>>(
-    new Set()
-  );
+  const [eventAssignmentDialog, setEventAssignmentDialog] = useState<{
+    isOpen: boolean;
+    userId: string;
+    userName: string;
+  }>({
+    isOpen: false,
+    userId: "",
+    userName: "",
+  });
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfiles();
@@ -50,7 +56,7 @@ export default function UserManagementTab() {
   ) => {
     if (!isSuperAdmin(user?.profile)) return;
 
-    setUpdatingPermissions((prev) => new Set(prev).add(profileUserId));
+    setUpdatingUserId(profileUserId);
 
     try {
       await updateUserPermission(profileUserId, newLevel);
@@ -59,12 +65,24 @@ export default function UserManagementTab() {
       console.error("Error updating permission:", error);
       alert("Failed to update permission level");
     } finally {
-      setUpdatingPermissions((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(profileUserId);
-        return newSet;
-      });
+      setUpdatingUserId(null);
     }
+  };
+
+  const handleOpenEventAssignment = (userId: string, userName: string) => {
+    setEventAssignmentDialog({
+      isOpen: true,
+      userId,
+      userName,
+    });
+  };
+
+  const handleCloseEventAssignment = () => {
+    setEventAssignmentDialog({
+      isOpen: false,
+      userId: "",
+      userName: "",
+    });
   };
 
   const getPermissionLevelLabel = (level: number) => {
@@ -74,7 +92,7 @@ export default function UserManagementTab() {
       case 1:
         return { label: "Lead Manager", color: "bg-blue-100 text-blue-800" };
       case 2:
-        return { label: "Regular User", color: "bg-gray-100 text-gray-800" };
+        return { label: "Unknown", color: "bg-gray-100 text-gray-800" };
       default:
         return { label: "Unknown", color: "bg-gray-100 text-gray-800" };
     }
@@ -184,9 +202,6 @@ export default function UserManagementTab() {
                           <div className="text-sm font-medium text-gray-900">
                             {profile.first_name} {profile.last_name}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {profile.email || "No email"}
-                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -201,60 +216,58 @@ export default function UserManagementTab() {
                           ? formatDate(profile.created_at)
                           : "Unknown"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 text-sm font-medium">
                         {!isCurrentUser && (
                           <div className="flex space-x-2">
-                            {currentLevel !== 0 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleUpdatePermission(profile.user_id, 0)
-                                }
-                                disabled={updatingPermissions.has(
-                                  profile.user_id
-                                )}
-                                className="text-xs"
-                              >
-                                {updatingPermissions.has(profile.user_id)
-                                  ? "Updating..."
-                                  : "Make Super Admin"}
-                              </Button>
+                            <GenericDropdown
+                              options={[
+                                { id: 0, label: "Super Admin", data: 0 },
+                                { id: 1, label: "Lead Manager", data: 1 },
+                                { id: 2, label: "Unknown", data: 2 },
+                              ]}
+                              selectedOption={{
+                                id: currentLevel,
+                                label:
+                                  getPermissionLevelLabel(currentLevel).label,
+                                data: currentLevel,
+                              }}
+                              onOptionChange={(option) =>
+                                handleUpdatePermission(
+                                  profile.user_id,
+                                  option.data
+                                )
+                              }
+                              placeholder="Select Role"
+                              className="w-32"
+                              renderOption={(option) => (
+                                <span className="text-xs">{option.label}</span>
+                              )}
+                              renderSelected={(option) => (
+                                <span className="text-xs font-medium">
+                                  {updatingUserId === profile.user_id
+                                    ? "Updating..."
+                                    : option?.label || "Select Role"}
+                                </span>
+                              )}
+                            />
+                            {updatingUserId === profile.user_id && (
+                              <div className="text-xs text-gray-500 ml-2">
+                                Updating...
+                              </div>
                             )}
-                            {currentLevel !== 1 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleUpdatePermission(profile.user_id, 1)
-                                }
-                                disabled={updatingPermissions.has(
-                                  profile.user_id
-                                )}
-                                className="text-xs"
-                              >
-                                {updatingPermissions.has(profile.user_id)
-                                  ? "Updating..."
-                                  : "Make Lead Manager"}
-                              </Button>
-                            )}
-                            {currentLevel !== 2 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleUpdatePermission(profile.user_id, 2)
-                                }
-                                disabled={updatingPermissions.has(
-                                  profile.user_id
-                                )}
-                                className="text-xs"
-                              >
-                                {updatingPermissions.has(profile.user_id)
-                                  ? "Updating..."
-                                  : "Make Regular User"}
-                              </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleOpenEventAssignment(
+                                  profile.user_id,
+                                  `${profile.first_name} ${profile.last_name}`
+                                )
+                              }
+                              className="text-xs text-white bg-blue-600 hover:bg-blue-700 hover:text-white"
+                            >
+                              Manage Events
+                            </Button>
                           </div>
                         )}
                         {isCurrentUser && (
@@ -271,6 +284,14 @@ export default function UserManagementTab() {
           </div>
         )}
       </div>
+
+      {/* Event Assignment Dialog */}
+      <EventAssignmentDialog
+        isOpen={eventAssignmentDialog.isOpen}
+        onClose={handleCloseEventAssignment}
+        userId={eventAssignmentDialog.userId}
+        userName={eventAssignmentDialog.userName}
+      />
     </div>
   );
 }

@@ -10,6 +10,8 @@ export type EventWithStats = Tables<"events"> & {
 export type Attendee = Tables<"attendees">;
 export type SavedSubmission = Tables<"saved">;
 
+export type EventAssignment = Tables<"event_assignments">;
+
 export async function getEventsWithStats(
   includeArchived: boolean = false
 ): Promise<EventWithStats[]> {
@@ -771,4 +773,87 @@ export async function getAllProfilesWithPermissions(): Promise<
   }
 
   return profiles || [];
+}
+
+// Event Assignment Functions
+export async function getUserEventAssignments(
+  userId: string
+): Promise<EventAssignment[]> {
+  const supabase = createClient();
+
+  const { data: assignments, error } = await supabase
+    .from("event_assignments")
+    .select(
+      `
+      *,
+      events (
+        id,
+        name,
+        date,
+        url_slug
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .order("assigned_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user event assignments:", error);
+    throw new Error("Failed to fetch user event assignments");
+  }
+
+  return assignments || [];
+}
+
+export async function getAllEvents(): Promise<Tables<"events">[]> {
+  const supabase = createClient();
+
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("archived", false)
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching events:", error);
+    throw new Error("Failed to fetch events");
+  }
+
+  return events || [];
+}
+
+export async function assignUserToEvent(
+  userId: string,
+  eventId: string
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("event_assignments").insert({
+    user_id: userId,
+    event_id: eventId,
+    assigned_by: (await supabase.auth.getUser()).data.user?.id || null,
+  });
+
+  if (error) {
+    console.error("Error assigning user to event:", error);
+    throw new Error("Failed to assign user to event");
+  }
+}
+
+export async function removeUserFromEvent(
+  userId: string,
+  eventId: string
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("event_assignments")
+    .delete()
+    .eq("user_id", userId)
+    .eq("event_id", eventId);
+
+  if (error) {
+    console.error("Error removing user from event:", error);
+    throw new Error("Failed to remove user from event");
+  }
 }
