@@ -157,7 +157,7 @@ export function LeadDialog({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="first_name"
@@ -198,47 +198,7 @@ export function LeadDialog({
               </div>
             </div>
 
-            {/* Only show event dropdown for super admins (level 0) */}
-            {!hideRestrictedFields && (
-              <div>
-                <label
-                  htmlFor="event_id"
-                  className="block text-sm font-medium text-gray-900 mb-1"
-                >
-                  Event *
-                </label>
-                <select
-                  id="event_id"
-                  name="event_id"
-                  required
-                  value={formData.event_id}
-                  onChange={handleInputChange}
-                  disabled={isReadOnly}
-                  className={getInputClassName()}
-                >
-                  <option value="">Select an event</option>
-                  {events.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.name} - {new Date(event.date).toLocaleDateString()}{" "}
-                      {event.end_date && event.end_date !== event.date
-                        ? `(${new Date(event.date).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })} - ${new Date(event.end_date).toLocaleTimeString(
-                            [],
-                            { hour: "2-digit", minute: "2-digit" }
-                          )})`
-                        : `(${new Date(event.date).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="email"
@@ -296,100 +256,34 @@ export function LeadDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="age_range"
-                  className="block text-sm font-medium text-gray-900 mb-1"
-                >
-                  Age Range
-                </label>
-                <select
-                  id="age_range"
-                  name="age_range"
-                  value={formData.age_range || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      age_range: e.target.value
-                        ? (e.target.value as "Child" | "Young Adult" | "Adult")
-                        : null,
-                    }))
-                  }
-                  disabled={isReadOnly}
-                  className={getInputClassName()}
-                >
-                  <option value="">Select age range</option>
-                  <option value="Child">Child</option>
-                  <option value="Young Adult">Young Adult</option>
-                  <option value="Adult">Adult</option>
-                </select>
-              </div>
-
-              {/* Only show Assign To dropdown for super admins (level 0) */}
-              {!hideRestrictedFields && (
-                <div>
-                  <label
-                    htmlFor="assigned_user_id"
-                    className="block text-sm font-medium text-gray-900 mb-1"
-                  >
-                    Assign To
-                  </label>
-                  <select
-                    id="assigned_user_id"
-                    name="assigned_user_id"
-                    value={formData.assigned_user_id || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        assigned_user_id: e.target.value || null,
-                      }))
-                    }
-                    disabled={isReadOnly}
-                    className={getInputClassName()}
-                  >
-                    <option value="">Unassigned</option>
-                    {profiles.map((profile) => (
-                      <option key={profile.user_id} value={profile.user_id}>
-                        {profile.first_name} {profile.last_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+            <div>
+              <label
+                htmlFor="age_range"
+                className="block text-sm font-medium text-gray-900 mb-1"
+              >
+                Age Range
+              </label>
+              <select
+                id="age_range"
+                name="age_range"
+                value={formData.age_range || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    age_range: e.target.value
+                      ? (e.target.value as "Child" | "Young Adult" | "Adult")
+                      : null,
+                  }))
+                }
+                disabled={isReadOnly}
+                className={getInputClassName()}
+              >
+                <option value="">Select age range</option>
+                <option value="Child">Child</option>
+                <option value="Young Adult">Young Adult</option>
+                <option value="Adult">Adult</option>
+              </select>
             </div>
-
-            {/* Only show Referred By dropdown for super admins (level 0) */}
-            {!hideRestrictedFields && (
-              <div>
-                <label
-                  htmlFor="referrer_user_id"
-                  className="block text-sm font-medium text-gray-900 mb-1"
-                >
-                  Referred By
-                </label>
-                <select
-                  id="referrer_user_id"
-                  name="referrer_user_id"
-                  value={formData.referrer_user_id || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      referrer_user_id: e.target.value || null,
-                    }))
-                  }
-                  disabled={isReadOnly}
-                  className={getInputClassName()}
-                >
-                  <option value="">Select referrer</option>
-                  {profiles.map((profile) => (
-                    <option key={profile.user_id} value={profile.user_id}>
-                      {profile.first_name} {profile.last_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div className="flex space-x-4">
               <div className="flex items-center">
@@ -447,6 +341,115 @@ export function LeadDialog({
                 placeholder="Add any notes about this lead..."
               />
             </div>
+
+            {/* Admin Only Section */}
+            {!hideRestrictedFields && (
+              <>
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    Admin Only
+                  </h4>
+
+                  <div>
+                    <label
+                      htmlFor="event_id"
+                      className="block text-sm font-medium text-gray-900 mb-1"
+                    >
+                      Event *
+                    </label>
+                    <select
+                      id="event_id"
+                      name="event_id"
+                      required
+                      value={formData.event_id}
+                      onChange={handleInputChange}
+                      disabled={isReadOnly}
+                      className={getInputClassName()}
+                    >
+                      <option value="">Select an event</option>
+                      {events.map((event) => (
+                        <option key={event.id} value={event.id}>
+                          {event.name} -{" "}
+                          {new Date(event.date).toLocaleDateString()}{" "}
+                          {event.end_date && event.end_date !== event.date
+                            ? `(${new Date(event.date).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })} - ${new Date(
+                                event.end_date
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })})`
+                            : `(${new Date(event.date).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="assigned_user_id"
+                      className="block text-sm font-medium text-gray-900 mb-1"
+                    >
+                      Assign To
+                    </label>
+                    <select
+                      id="assigned_user_id"
+                      name="assigned_user_id"
+                      value={formData.assigned_user_id || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          assigned_user_id: e.target.value || null,
+                        }))
+                      }
+                      disabled={isReadOnly}
+                      className={getInputClassName()}
+                    >
+                      <option value="">Unassigned</option>
+                      {profiles.map((profile) => (
+                        <option key={profile.user_id} value={profile.user_id}>
+                          {profile.first_name} {profile.last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="referrer_user_id"
+                      className="block text-sm font-medium text-gray-900 mb-1"
+                    >
+                      Referred By
+                    </label>
+                    <select
+                      id="referrer_user_id"
+                      name="referrer_user_id"
+                      value={formData.referrer_user_id || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          referrer_user_id: e.target.value || null,
+                        }))
+                      }
+                      disabled={isReadOnly}
+                      className={getInputClassName()}
+                    >
+                      <option value="">Select referrer</option>
+                      {profiles.map((profile) => (
+                        <option key={profile.user_id} value={profile.user_id}>
+                          {profile.first_name} {profile.last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>

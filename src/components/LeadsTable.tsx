@@ -162,16 +162,16 @@ export function LeadsTable({
                 </th>
               )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lead
+                Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Source
+                Lead
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contact Info
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Source
               </th>
               {/* Only show Assigned To column for super admins (level 0) */}
               {isSuperAdmin(user?.profile) && (
@@ -219,6 +219,22 @@ export function LeadsTable({
                     }`}
                     onClick={() => isEditable && onEditLead?.(lead)}
                   >
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        lead.contacted
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {lead.contacted ? "Contacted" : "Not Contacted"}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
                     <div className="flex items-center">
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-900">
@@ -230,28 +246,6 @@ export function LeadsTable({
                           </div>
                         )}
                       </div>
-                      {!isEditable && isLeadManager(user?.profile) && (
-                        <div className="ml-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                            View Only
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      isEditable ? "cursor-pointer" : "cursor-default"
-                    }`}
-                    onClick={() => isEditable && onEditLead?.(lead)}
-                  >
-                    <div className="text-sm text-gray-900">
-                      {lead.events?.name ? lead.events.name : "Event Lead"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {lead.created_at
-                        ? formatDate(lead.created_at)
-                        : "Unknown date"}
                     </div>
                   </td>
                   <td
@@ -273,15 +267,14 @@ export function LeadsTable({
                     }`}
                     onClick={() => isEditable && onEditLead?.(lead)}
                   >
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        lead.contacted
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {lead.contacted ? "Contacted" : "Not Contacted"}
-                    </span>
+                    <div className="text-sm text-gray-900">
+                      {lead.events?.name ? lead.events.name : "Event Lead"}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {lead.created_at
+                        ? formatDate(lead.created_at)
+                        : "Unknown date"}
+                    </div>
                   </td>
                   {/* Only show Assigned To cell for super admins (level 0) */}
                   {isSuperAdmin(user?.profile) && (

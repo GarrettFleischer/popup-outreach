@@ -89,7 +89,13 @@ export default function LeadsManagement() {
       setLeads(response.leads);
       setTotalCount(response.totalCount);
       setTotalPages(response.totalPages);
-      setCurrentPage(response.currentPage);
+
+      // Ensure currentPage is valid after loading
+      if (response.totalPages > 0 && currentPage > response.totalPages) {
+        setCurrentPage(response.totalPages);
+      }
+      // Don't update currentPage here - it can cause a loop
+      // setCurrentPage(response.currentPage);
     } catch (error) {
       console.error("Error loading leads:", error);
     } finally {
@@ -132,30 +138,52 @@ export default function LeadsManagement() {
   useEffect(() => {
     if (user) {
       setCurrentPage(1); // Reset to first page when filters change
-      loadLeads();
+      // Don't call loadLeads here - let the next useEffect handle it
     }
-  }, [hideContacted, hideAssigned, user, loadLeads]);
+  }, [hideContacted, hideAssigned, user]);
 
   // Function to apply search
   const applySearch = () => {
     setAppliedSearchQuery(searchInput);
     setCurrentPage(1); // Reset to first page when search changes
+    // Don't call loadLeads here - let the next useEffect handle it
   };
 
-  // Reload leads when page changes
+  // Main effect to load leads - only trigger when dependencies actually change
   useEffect(() => {
-    if (user && currentPage > 1) {
+    if (user && !isPageLoading) {
+      // Ensure currentPage is valid before loading
+      if (currentPage < 1) {
+        setCurrentPage(1);
+        return;
+      }
       loadLeads();
     }
-  }, [currentPage, user, loadLeads]);
+  }, [
+    user,
+    currentPage,
+    pageSize,
+    appliedSearchQuery,
+    hideContacted,
+    hideAssigned,
+    loadLeads,
+    isPageLoading,
+  ]);
 
-  // Reload leads when page size changes
-  useEffect(() => {
-    if (user) {
-      setCurrentPage(1);
-      loadLeads();
-    }
-  }, [pageSize, user, loadLeads]);
+  // Remove the separate useEffect for currentPage changes since it's now handled above
+  // useEffect(() => {
+  //   if (user && currentPage > 1) {
+  //     loadLeads();
+  //   }
+  // }, [currentPage, user, loadLeads]);
+
+  // Remove the separate useEffect for pageSize changes since it's now handled above
+  // useEffect(() => {
+  //   if (user) {
+  //     setCurrentPage(1);
+  //     loadLeads();
+  //   }
+  // }, [pageSize, user, loadLeads]);
 
   // Set up real-time subscriptions for live updates
   useEffect(() => {
@@ -175,14 +203,19 @@ export default function LeadsManagement() {
         },
         (payload) => {
           console.log("Leads realtime update:", payload);
-          // Only refresh if not currently loading or refreshing
+          // Only refresh if not currently loading, paginating, or refreshing
+          // Add a longer delay to avoid interfering with user pagination
           if (!isLoading && !isPageLoading && !isRefreshing) {
             setIsRefreshing(true);
-            // Debounce the refresh to prevent excessive API calls
+            // Use a longer debounce to avoid interfering with pagination
             setTimeout(() => {
-              loadLeads();
+              // Only refresh if we're still on the same page and filters
+              // This prevents real-time updates from interfering with pagination
+              if (!isPageLoading) {
+                loadLeads();
+              }
               setIsRefreshing(false);
-            }, 500);
+            }, 1000);
           }
         }
       )
@@ -224,13 +257,17 @@ export default function LeadsManagement() {
           console.log("Events realtime update:", payload);
           // Refresh events data when there are changes
           loadEvents();
-          // Also refresh leads data since leads display event information
+          // Only refresh leads data if not currently paginating
+          // This prevents real-time updates from interfering with pagination
           if (!isLoading && !isPageLoading && !isRefreshing) {
             setIsRefreshing(true);
             setTimeout(() => {
-              loadLeads();
+              // Only refresh if we're still not paginating
+              if (!isPageLoading) {
+                loadLeads();
+              }
               setIsRefreshing(false);
-            }, 500);
+            }, 1000);
           }
         }
       )
@@ -261,9 +298,10 @@ export default function LeadsManagement() {
   // Handle page change
   const handlePageChange = (page: number) => {
     if (isPageLoading) return; // Prevent multiple simultaneous requests
-    setCurrentPage(page);
+    if (page === currentPage) return; // Don't change to the same page
     setIsPageLoading(true);
-    loadLeads();
+    setCurrentPage(page);
+    // loadLeads() will be called automatically by the useEffect when currentPage changes
   };
 
   // Selection handlers
@@ -449,7 +487,7 @@ export default function LeadsManagement() {
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
-                  loadLeads();
+                  // loadLeads() will be called automatically by the useEffect when pageSize changes
                 }}
                 disabled={isPageLoading}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
@@ -546,7 +584,7 @@ export default function LeadsManagement() {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1 || isPageLoading}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -573,7 +611,7 @@ export default function LeadsManagement() {
                       className={`px-3 py-2 text-sm font-medium rounded-md ${
                         currentPage === pageNum
                           ? "bg-blue-600 text-white"
-                          : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
+                          : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:cursor-pointer"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {pageNum}
@@ -585,7 +623,7 @@ export default function LeadsManagement() {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages || isPageLoading}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
