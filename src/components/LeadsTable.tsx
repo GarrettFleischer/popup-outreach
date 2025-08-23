@@ -1,7 +1,7 @@
 import React from "react";
 import { Tables } from "@/utils/supabase/database.types";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSuperAdmin } from "@/utils/supabase/types/users";
+import { isSuperAdmin, isLeadManager } from "@/utils/supabase/types/users";
 
 type LeadWithEventInfo = Tables<"saved"> & {
   events?: {
@@ -41,6 +41,22 @@ export function LeadsTable({
   profiles,
 }: LeadsTableProps) {
   const { user } = useAuth();
+
+  // Function to check if the current user can edit a specific lead
+  const canEditLead = (lead: LeadWithEventInfo): boolean => {
+    if (isSuperAdmin(user?.profile)) {
+      return true; // Super admins can edit everything
+    }
+
+    if (isLeadManager(user?.profile)) {
+      // Lead managers can edit leads assigned to them
+      const userProfileId = user?.profile?.user_id;
+
+      return lead.assigned_user_id === userProfileId;
+    }
+
+    return false; // Regular users can't edit leads in the admin panel
+  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -165,97 +181,130 @@ export function LeadsTable({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-50">
-                {/* Only show checkbox for super admins (level 0) */}
-                {isSuperAdmin(user?.profile) && (
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedLeads.includes(lead.id)}
-                      onChange={(e) => onSelectLead(lead.id, e.target.checked)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                )}
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
+            {leads.map((lead) => {
+              const isEditable = canEditLead(lead);
+              return (
+                <tr
+                  key={lead.id}
+                  className={`${
+                    isEditable
+                      ? "hover:bg-gray-50 cursor-pointer"
+                      : "opacity-60"
+                  }`}
                 >
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {lead.first_name} {lead.last_name}
-                    </div>
-                    {lead.age_range && (
-                      <div className="text-sm text-gray-500">
-                        Age: {lead.age_range}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
-                >
-                  <div className="text-sm text-gray-900">
-                    {lead.events?.name ? lead.events.name : "Event Lead"}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {lead.created_at
-                      ? formatDate(lead.created_at)
-                      : "Unknown date"}
-                  </div>
-                </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
-                >
-                  <div className="text-sm text-gray-900">{lead.email}</div>
-                  {lead.phone && (
-                    <div className="text-sm text-gray-500">{lead.phone}</div>
+                  {/* Only show checkbox for super admins (level 0) */}
+                  {isSuperAdmin(user?.profile) && (
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.includes(lead.id)}
+                        onChange={(e) =>
+                          onSelectLead(lead.id, e.target.checked)
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </td>
                   )}
-                </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
-                >
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      lead.contacted
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
                     }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
                   >
-                    {lead.contacted ? "Contacted" : "Not Contacted"}
-                  </span>
-                </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
-                >
-                  <div className="text-sm text-gray-900">
-                    {lead.assigned_user_id
-                      ? lead.profiles
-                        ? `${lead.profiles.first_name} ${lead.profiles.last_name}`
-                        : "Assigned"
-                      : "Unassigned"}
-                  </div>
-                </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                  onClick={() => onEditLead?.(lead)}
-                >
-                  <div className="text-sm text-gray-900">
-                    {lead.referrer_user_id
-                      ? lead.referrer_profiles
-                        ? `${lead.referrer_profiles.first_name} ${lead.referrer_profiles.last_name}`
-                        : "Referred"
-                      : "Unknown"}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    <div className="flex items-center">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {lead.first_name} {lead.last_name}
+                        </div>
+                        {lead.age_range && (
+                          <div className="text-sm text-gray-500">
+                            Age: {lead.age_range}
+                          </div>
+                        )}
+                      </div>
+                      {!isEditable && isLeadManager(user?.profile) && (
+                        <div className="ml-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            View Only
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
+                    <div className="text-sm text-gray-900">
+                      {lead.events?.name ? lead.events.name : "Event Lead"}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {lead.created_at
+                        ? formatDate(lead.created_at)
+                        : "Unknown date"}
+                    </div>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
+                    <div className="text-sm text-gray-900">{lead.email}</div>
+                    {lead.phone && (
+                      <div className="text-sm text-gray-500">{lead.phone}</div>
+                    )}
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        lead.contacted
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {lead.contacted ? "Contacted" : "Not Contacted"}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
+                    <div className="text-sm text-gray-900">
+                      {lead.assigned_user_id
+                        ? lead.profiles
+                          ? `${lead.profiles.first_name} ${lead.profiles.last_name}`
+                          : "Assigned"
+                        : "Unassigned"}
+                    </div>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      isEditable ? "cursor-pointer" : "cursor-default"
+                    }`}
+                    onClick={() => isEditable && onEditLead?.(lead)}
+                  >
+                    <div className="text-sm text-gray-900">
+                      {lead.referrer_user_id
+                        ? lead.referrer_profiles
+                          ? `${lead.referrer_profiles.first_name} ${lead.referrer_profiles.last_name}`
+                          : "Referred"
+                        : "Unknown"}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -10,6 +10,7 @@ interface LeadDialogProps {
   lead?: SavedSubmission | null; // If provided, we're editing; if null/undefined, we're creating
   profiles?: Tables<"profiles">[]; // Available users for assignment
   events?: Tables<"events">[]; // Available events for selection
+  isReadOnly?: boolean; // If true, the dialog will be in read-only mode
 }
 
 export interface LeadFormData {
@@ -34,6 +35,7 @@ export function LeadDialog({
   lead,
   profiles = [],
   events = [],
+  isReadOnly = false,
 }: LeadDialogProps) {
   const [formData, setFormData] = useState<LeadFormData>({
     event_id: "",
@@ -50,6 +52,13 @@ export function LeadDialog({
     referrer_user_id: null,
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Helper function to get consistent input styling
+  const getInputClassName = () => {
+    return `w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 ${
+      isReadOnly ? "bg-gray-100" : "bg-white"
+    }`;
+  };
 
   // Reset form when dialog opens/closes or lead changes
   useEffect(() => {
@@ -92,6 +101,12 @@ export function LeadDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent submission in read-only mode
+    if (isReadOnly) {
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -126,7 +141,7 @@ export function LeadDialog({
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-gray-900">
-              {lead ? "Edit Lead" : "Create Lead"}
+              {isReadOnly ? "View Lead" : lead ? "Edit Lead" : "Create Lead"}
             </h3>
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               ✕
@@ -149,7 +164,8 @@ export function LeadDialog({
                   required
                   value={formData.first_name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                  disabled={isReadOnly}
+                  className={getInputClassName()}
                   placeholder="First name"
                 />
               </div>
@@ -167,7 +183,8 @@ export function LeadDialog({
                   required
                   value={formData.last_name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                  disabled={isReadOnly}
+                  className={getInputClassName()}
                   placeholder="Last name"
                 />
               </div>
@@ -186,7 +203,8 @@ export function LeadDialog({
                 required
                 value={formData.event_id}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
               >
                 <option value="">Select an event</option>
                 {events.map((event) => (
@@ -214,16 +232,16 @@ export function LeadDialog({
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-900 mb-1"
               >
-                Email *
+                Email
               </label>
               <input
                 type="email"
                 id="email"
                 name="email"
-                required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
                 placeholder="email@example.com"
               />
             </div>
@@ -241,7 +259,8 @@ export function LeadDialog({
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
                 placeholder="(555) 123-4567"
               />
             </div>
@@ -259,7 +278,8 @@ export function LeadDialog({
                 rows={2}
                 value={formData.address}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
                 placeholder="Enter address (optional)"
               />
             </div>
@@ -283,7 +303,8 @@ export function LeadDialog({
                       : null,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
               >
                 <option value="">Select age range</option>
                 <option value="Child">Child</option>
@@ -309,7 +330,8 @@ export function LeadDialog({
                     assigned_user_id: e.target.value || null,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
               >
                 <option value="">Unassigned</option>
                 {profiles.map((profile) => (
@@ -337,7 +359,8 @@ export function LeadDialog({
                     referrer_user_id: e.target.value || null,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
               >
                 <option value="">Select referrer</option>
                 {profiles.map((profile) => (
@@ -356,6 +379,7 @@ export function LeadDialog({
                   name="needs_ride"
                   checked={formData.needs_ride}
                   onChange={handleInputChange}
+                  disabled={isReadOnly}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <label
@@ -373,6 +397,7 @@ export function LeadDialog({
                   name="contacted"
                   checked={formData.contacted}
                   onChange={handleInputChange}
+                  disabled={isReadOnly}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <label
@@ -397,18 +422,25 @@ export function LeadDialog({
                 rows={3}
                 value={formData.notes}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                disabled={isReadOnly}
+                className={getInputClassName()}
                 placeholder="Add any notes about this lead..."
               />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
+                {isReadOnly ? "Close" : "Cancel"}
               </Button>
-              <Button type="submit" variant="primary" disabled={isSaving}>
-                {isSaving ? "Saving..." : lead ? "Update Lead" : "Create Lead"}
-              </Button>
+              {!isReadOnly && (
+                <Button type="submit" variant="primary" disabled={isSaving}>
+                  {isSaving
+                    ? "Saving..."
+                    : lead
+                    ? "Update Lead"
+                    : "Create Lead"}
+                </Button>
+              )}
             </div>
           </form>
         </div>

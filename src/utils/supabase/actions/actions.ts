@@ -341,6 +341,9 @@ export async function getLeadsWithPagination({
       query = query.is("assigned_user_id", null);
     }
 
+    // Note: assignedUserId should be a profile ID, not a user ID
+    // This filter is mainly used for super admins to filter by specific assigned users
+    // For lead managers, RLS policies handle the filtering automatically
     if (assignedUserId) {
       query = query.eq("assigned_user_id", assignedUserId);
     }
@@ -390,6 +393,9 @@ export async function getLeadsWithPagination({
       query = query.is("assigned_user_id", null);
     }
 
+    // Note: assignedUserId should be a profile ID, not a user ID
+    // This filter is mainly used for super admins to filter by specific assigned users
+    // For lead managers, RLS policies handle the filtering automatically
     if (assignedUserId) {
       query = query.eq("assigned_user_id", assignedUserId);
     }

@@ -8,7 +8,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/Button";
 import { LeadsTable } from "@/components/LeadsTable";
 import { LeadDialog, type LeadFormData } from "@/components/LeadDialog";
-import { isSuperAdmin } from "@/utils/supabase/types/users";
+import { isSuperAdmin, isLeadManager } from "@/utils/supabase/types/users";
 
 import {
   getLeadsWithPagination,
@@ -75,13 +75,15 @@ export default function LeadsManagement() {
   const loadLeads = useCallback(async () => {
     try {
       // RLS policies now handle permission-based filtering at the database level
+      // For lead managers, we don't pass assignedUserId since RLS will show both assigned and referred leads
+      // For super admins, we can optionally filter by specific assigned users
       const response = await getLeadsWithPagination({
         page: currentPage,
         pageSize,
         search: appliedSearchQuery,
         hideContacted,
         hideAssigned,
-        assignedUserId: isSuperAdmin(user?.profile) ? null : user?.id || null,
+        assignedUserId: null, // Let RLS policies handle filtering for all users
       });
 
       setLeads(response.leads);
@@ -322,6 +324,23 @@ export default function LeadsManagement() {
   const handleEditLead = (lead: LeadWithEventInfo) => {
     setEditingLead(lead);
     setIsDialogOpen(true);
+  };
+
+  // Function to check if the current lead being edited should be read-only
+  const isLeadReadOnly = (): boolean => {
+    if (!editingLead || isSuperAdmin(user?.profile)) {
+      return false; // Super admins can edit everything, new leads are always editable
+    }
+
+    if (isLeadManager(user?.profile)) {
+      // Lead managers can edit leads assigned to them
+      const userProfileId = user?.profile?.user_id;
+
+      // Check if the lead is assigned to the current user
+      return editingLead.assigned_user_id !== userProfileId;
+    }
+
+    return true; // Regular users can't edit leads in the admin panel
   };
 
   const handleSaveLead = async (leadData: LeadFormData) => {
@@ -589,6 +608,7 @@ export default function LeadsManagement() {
         lead={editingLead}
         profiles={profiles}
         events={events}
+        isReadOnly={isLeadReadOnly()}
       />
     </div>
   );
