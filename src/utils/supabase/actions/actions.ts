@@ -4,7 +4,6 @@ import { Tables } from "@/utils/supabase/database.types";
 export type EventWithStats = Tables<"events"> & {
   attendee_count: number;
   saved_count: number;
-  lead_count: number;
 };
 
 export type Attendee = Tables<"attendees">;
@@ -54,19 +53,10 @@ export async function getEventsWithStats(
         .select("*", { count: "exact", head: true })
         .eq("event_id", event.id);
 
-      // Get lead count for the event (now consolidated into saved table)
-      // A lead is a saved submission that has been assigned to a user
-      const { count: leadCount } = await supabase
-        .from("saved")
-        .select("*", { count: "exact", head: true })
-        .eq("event_id", event.id)
-        .not("assigned_user_id", "is", null);
-
       return {
         ...event,
         attendee_count: attendeeCount || 0,
         saved_count: savedCount || 0,
-        lead_count: leadCount || 0,
       };
     })
   );

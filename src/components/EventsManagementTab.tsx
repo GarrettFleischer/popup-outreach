@@ -1,23 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/Button";
 import {
   getEventsWithStats,
   type EventWithStats,
 } from "@/utils/supabase/actions/actions";
-
-interface CreateEventForm {
-  name: string;
-  date: string;
-  time: string;
-  endDate: string;
-  endTime: string;
-  description: string;
-}
+import CreateEventDialog from "./CreateEventDialog";
+import { createClient } from "@/utils/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export default function EventsManagementTab() {
   const { user } = useAuth();
@@ -25,41 +18,38 @@ export default function EventsManagementTab() {
   const [events, setEvents] = useState<EventWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
-  const [creatingEvent, setCreatingEvent] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [eventForm, setEventForm] = useState<CreateEventForm>({
-    name: "",
-    date: "",
-    time: "12:00",
-    endDate: "",
-    endTime: "13:00",
-    description: "",
-  });
-  const supabase = createClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Helper function to ensure end date/time is valid
-  const ensureValidEndDateTime = (
-    startDate: string,
-    startTime: string,
-    endDate: string,
-    endTime: string
-  ) => {
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
+  // Separate events into upcoming and past
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const now = new Date();
+    const upcoming: EventWithStats[] = [];
+    const past: EventWithStats[] = [];
 
-    if (endDateTime <= startDateTime) {
-      // End time is before or equal to start time, adjust it
-      const adjustedEndDateTime = new Date(
-        startDateTime.getTime() + 60 * 60 * 1000
-      ); // Add 1 hour
-      return {
-        endDate: adjustedEndDateTime.toISOString().split("T")[0],
-        endTime: adjustedEndDateTime.toTimeString().slice(0, 5),
-      };
-    }
+    events.forEach((event) => {
+      const eventEndDate = event.end_date
+        ? new Date(event.end_date)
+        : new Date(event.date);
+      if (eventEndDate >= now) {
+        upcoming.push(event);
+      } else {
+        past.push(event);
+      }
+    });
 
-    return { endDate, endTime };
-  };
+    // Sort upcoming events by date (earliest first)
+    upcoming.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Sort past events by date (most recent first)
+    past.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [events]);
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
@@ -77,68 +67,106 @@ export default function EventsManagementTab() {
     loadEvents();
   }, [loadEvents]);
 
-  const handleCreateEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingEvent(true);
+  // Set up real-time subscriptions for live updates
+  useEffect(() => {
+    if (!user) return;
 
-    try {
-      // Validate that end date/time is after start date/time
-      const startDateTime = new Date(`${eventForm.date}T${eventForm.time}`);
-      const endDateTime = new Date(`${eventForm.endDate}T${eventForm.endTime}`);
+    const supabase = createClient();
+    const channels: RealtimeChannel[] = [];
+    let isMounted = true;
 
-      if (endDateTime <= startDateTime) {
-        alert("End date and time must be after start date and time");
-        setCreatingEvent(false);
-        return;
-      }
+    // Subscribe to events table changes
+    const eventsChannel = supabase
+      .channel("events-management-events")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "events",
+        },
+        (payload) => {
+          console.log("Events realtime update:", payload);
+          // Refresh events when any event is created, updated, or deleted
+          if (!isRefreshing && isMounted) {
+            setIsRefreshing(true);
+            setTimeout(() => {
+              if (isMounted) {
+                loadEvents();
+                setIsRefreshing(false);
+              }
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
 
-      // Combine date and time and convert to UTC
-      const localDateTime = new Date(`${eventForm.date}T${eventForm.time}`);
-      const utcDateTime = new Date(
-        localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000
-      );
+    channels.push(eventsChannel);
 
-      // Combine end date and time and convert to UTC
-      const localEndDateTime = new Date(
-        `${eventForm.endDate}T${eventForm.endTime}`
-      );
-      const utcEndDateTime = new Date(
-        localEndDateTime.getTime() -
-          localEndDateTime.getTimezoneOffset() * 60000
-      );
+    // Subscribe to attendees table changes
+    const attendeesChannel = supabase
+      .channel("events-management-attendees")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "attendees",
+        },
+        (payload) => {
+          console.log("Attendees realtime update:", payload);
+          // Refresh events to get updated attendee counts
+          if (!isRefreshing && isMounted) {
+            setIsRefreshing(true);
+            setTimeout(() => {
+              if (isMounted) {
+                loadEvents();
+                setIsRefreshing(false);
+              }
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
 
-      const { error } = await supabase.from("events").insert({
-        name: eventForm.name,
-        date: utcDateTime.toISOString(),
-        end_date: utcEndDateTime.toISOString(),
-        description: eventForm.description,
-        created_by: user?.profile?.user_id,
-        url_slug: "", // This will be auto-generated by the database trigger
+    channels.push(attendeesChannel);
+
+    // Subscribe to saved table changes
+    const savedChannel = supabase
+      .channel("events-management-saved")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "saved",
+        },
+        (payload) => {
+          console.log("Saved submissions realtime update:", payload);
+          // Refresh events to get updated saved counts
+          if (!isRefreshing && isMounted) {
+            setIsRefreshing(true);
+            setTimeout(() => {
+              if (isMounted) {
+                loadEvents();
+                setIsRefreshing(false);
+              }
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
+
+    channels.push(savedChannel);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel);
       });
-
-      if (error) {
-        console.error("Error creating event:", error);
-        alert("Failed to create event. Please try again.");
-      } else {
-        alert("Event created successfully!");
-        setEventForm({
-          name: "",
-          date: "",
-          time: "12:00",
-          endDate: "",
-          endTime: "13:00",
-          description: "",
-        });
-        setShowCreateEvent(false);
-        loadEvents(); // Refresh the events list
-      }
-    } catch (error) {
-      console.error("Error creating event:", error);
-      alert("Failed to create event. Please try again.");
-    } finally {
-      setCreatingEvent(false);
-    }
-  };
+    };
+  }, [user, loadEvents]);
 
   const handleEditEvent = (event: EventWithStats) => {
     router.push(`/admin/events/${event.id}/edit`);
@@ -204,10 +232,39 @@ export default function EventsManagementTab() {
     return `${startDateStr} (${startTimeStr} ${timezone})`;
   };
 
+  const getEventStatus = (event: EventWithStats) => {
+    if (event.archived) {
+      return { text: "Archived", className: "bg-orange-100 text-orange-800" };
+    }
+
+    const now = new Date();
+    const eventStart = new Date(event.date);
+    const eventEnd = event.end_date ? new Date(event.end_date) : eventStart;
+
+    if (now < eventStart) {
+      // Event hasn't started yet
+      return { text: "Upcoming", className: "bg-blue-100 text-blue-800" };
+    } else if (now >= eventStart && now <= eventEnd) {
+      // Event is happening now
+      return { text: "Active", className: "bg-green-100 text-green-800" };
+    } else {
+      // Event has ended
+      return { text: "Completed", className: "bg-gray-100 text-gray-800" };
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading events...</div>
+      </div>
+    );
+  }
+
+  if (isRefreshing && !isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Updating events...</div>
       </div>
     );
   }
@@ -219,6 +276,9 @@ export default function EventsManagementTab() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Event Management
           </h2>
+          <p className="text-sm text-gray-600 mb-2">
+            Manage your upcoming and past events
+          </p>
           <div className="flex items-center mt-2">
             <input
               type="checkbox"
@@ -240,18 +300,23 @@ export default function EventsManagementTab() {
         </Button>
       </div>
 
-      {/* Events Table */}
+      {/* Upcoming Events Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            All Events ({events.length})
+            Upcoming Events ({upcomingEvents.length})
+            {isRefreshing && !isLoading && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                Updating...
+              </span>
+            )}
           </h3>
         </div>
 
-        {events.length === 0 ? (
+        {upcomingEvents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No events created yet</p>
-            <p className="text-sm">Create your first event to get started</p>
+            <p className="text-lg mb-2">No upcoming events</p>
+            <p className="text-sm">Create a new event to get started</p>
           </div>
         ) : (
           <div className="overflow-x-auto -mx-6 sm:mx-0">
@@ -273,16 +338,13 @@ export default function EventsManagementTab() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
                     Saved
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
-                    Leads
-                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 min-w-[100px]">
                     Link
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {events.map((event) => (
+                {upcomingEvents.map((event) => (
                   <tr
                     key={event.id}
                     className={`hover:bg-gray-50 cursor-pointer ${
@@ -323,12 +385,10 @@ export default function EventsManagementTab() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          event.archived
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-green-100 text-green-800"
+                          getEventStatus(event).className
                         }`}
                       >
-                        {event.archived ? "Archived" : "Active"}
+                        {getEventStatus(event).text}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -339,11 +399,6 @@ export default function EventsManagementTab() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {event.saved_count}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {event.lead_count}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -366,272 +421,134 @@ export default function EventsManagementTab() {
         )}
       </div>
 
-      {/* Create Event Modal */}
-      {showCreateEvent && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Create New Event
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCreateEvent(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="eventName"
-                    className="block text-sm font-medium text-gray-900 mb-1"
-                  >
-                    Event Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="eventName"
-                    required
-                    value={eventForm.name}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    placeholder="Enter event name"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="eventDate"
-                      className="block text-sm font-medium text-gray-900 mb-1"
-                    >
-                      Event Date *
-                    </label>
-                    <input
-                      type="date"
-                      id="eventDate"
-                      required
-                      value={eventForm.date}
-                      onChange={(e) => {
-                        const newDate = e.target.value;
-                        setEventForm((prev) => {
-                          // Auto-set end date to match start date if it's not already set
-                          let newEndDate = prev.endDate || newDate;
-
-                          // If end date is now before start date, set it to start date
-                          if (newEndDate < newDate) {
-                            newEndDate = newDate;
-                          }
-
-                          // Ensure end time is valid for the new dates
-                          const { endTime } = ensureValidEndDateTime(
-                            newDate,
-                            prev.time,
-                            newEndDate,
-                            prev.endTime
-                          );
-
-                          return {
-                            ...prev,
-                            date: newDate,
-                            endDate: newEndDate,
-                            endTime,
-                          };
-                        });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="eventTime"
-                      className="block text-sm font-medium text-gray-900 mb-1"
-                    >
-                      Event Time *
-                    </label>
-                    <input
-                      type="time"
-                      id="eventTime"
-                      required
-                      value={eventForm.time}
-                      onChange={(e) => {
-                        const newTime = e.target.value;
-                        setEventForm((prev) => {
-                          // Calculate end time 1 hour after start time
-                          const [hours, minutes] = newTime
-                            .split(":")
-                            .map(Number);
-                          const endHours = (hours + 1) % 24;
-                          const endTime = `${endHours
-                            .toString()
-                            .padStart(2, "0")}:${minutes
-                            .toString()
-                            .padStart(2, "0")}`;
-
-                          // Check if current end time would be before start time
-                          let newEndTime = prev.endTime || endTime;
-                          if (prev.date === prev.endDate) {
-                            // Same date, check if end time is before start time
-                            const [endHours, endMinutes] = newEndTime
-                              .split(":")
-                              .map(Number);
-                            if (
-                              endHours < hours ||
-                              (endHours === hours && endMinutes <= minutes)
-                            ) {
-                              newEndTime = endTime; // Set to 1 hour after start time
-                            }
-                          }
-
-                          // Ensure end date/time is valid
-                          const { endDate, endTime: validEndTime } =
-                            ensureValidEndDateTime(
-                              prev.date,
-                              newTime,
-                              prev.endDate,
-                              newEndTime
-                            );
-
-                          return {
-                            ...prev,
-                            time: newTime,
-                            endDate,
-                            endTime: validEndTime,
-                          };
-                        });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="eventEndDate"
-                      className="block text-sm font-medium text-gray-900 mb-1"
-                    >
-                      End Date *
-                    </label>
-                    <input
-                      type="date"
-                      id="eventEndDate"
-                      required
-                      value={eventForm.endDate}
-                      onChange={(e) => {
-                        const newEndDate = e.target.value;
-                        setEventForm((prev) => {
-                          // Ensure end date is not before start date
-                          if (newEndDate < prev.date) {
-                            return prev; // Don't update if invalid
-                          }
-
-                          return {
-                            ...prev,
-                            endDate: newEndDate,
-                          };
-                        });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="eventEndTime"
-                      className="block text-sm font-medium text-gray-900 mb-1"
-                    >
-                      End Time *
-                    </label>
-                    <input
-                      type="time"
-                      id="eventEndTime"
-                      required
-                      value={eventForm.endTime}
-                      onChange={(e) => {
-                        const newEndTime = e.target.value;
-                        setEventForm((prev) => {
-                          // If same date, ensure end time is after start time
-                          if (prev.date === prev.endDate) {
-                            const [startHours, startMinutes] = prev.time
-                              .split(":")
-                              .map(Number);
-                            const [endHours, endMinutes] = newEndTime
-                              .split(":")
-                              .map(Number);
-
-                            if (
-                              endHours < startHours ||
-                              (endHours === startHours &&
-                                endMinutes <= startMinutes)
-                            ) {
-                              return prev; // Don't update if invalid
-                            }
-                          }
-
-                          return {
-                            ...prev,
-                            endTime: newEndTime,
-                          };
-                        });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="eventDescription"
-                    className="block text-sm font-medium text-gray-900 mb-1"
-                  >
-                    Description
-                  </label>
-                  <textarea
-                    id="eventDescription"
-                    rows={3}
-                    value={eventForm.description}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
-                    placeholder="Enter event description"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateEvent(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={creatingEvent}
-                  >
-                    {creatingEvent ? "Creating..." : "Create Event"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
+      {/* Past Events Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Past Events ({pastEvents.length})
+            {isRefreshing && !isLoading && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                Updating...
+              </span>
+            )}
+          </h3>
         </div>
-      )}
+
+        {pastEvents.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            <p className="text-lg mb-2">No past events</p>
+            <p className="text-sm">
+              Past events will appear here once they&apos;re completed
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-6 sm:mx-0">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4 min-w-[150px]">
+                    Event
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[280px]">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 min-w-[80px]">
+                    Attendees
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
+                    Saved
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 min-w-[100px]">
+                    Link
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {pastEvents.map((event) => (
+                  <tr
+                    key={event.id}
+                    className={`hover:bg-gray-50 cursor-pointer ${
+                      event.archived ? "bg-gray-50 opacity-75" : ""
+                    }`}
+                    onClick={() => handleEditEvent(event)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="min-w-0">
+                        <div
+                          className={`text-sm font-medium ${
+                            event.archived ? "text-gray-600" : "text-gray-900"
+                          }`}
+                        >
+                          {event.name}
+                          {event.archived && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                              Archived
+                            </span>
+                          )}
+                        </div>
+                        {event.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {event.description}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${
+                        event.archived ? "text-gray-600" : "text-gray-900"
+                      }`}
+                    >
+                      <div className="whitespace-pre-line break-words min-w-0">
+                        {formatDate(event.date, event.end_date)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          getEventStatus(event).className
+                        }`}
+                      >
+                        {getEventStatus(event).text}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {event.attendee_count}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {event.saved_count}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/events/${event.url_slug}`, "_blank");
+                        }}
+                      >
+                        Open Event
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <CreateEventDialog
+        isOpen={showCreateEvent}
+        onClose={() => setShowCreateEvent(false)}
+        onEventCreated={loadEvents}
+      />
     </div>
   );
 }

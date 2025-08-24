@@ -248,7 +248,7 @@ export type Database = {
           contacted: boolean | null
           created_at: string | null
           email: string | null
-          event_id: string
+          event_id: string | null
           first_name: string
           id: string
           last_name: string
@@ -265,7 +265,7 @@ export type Database = {
           contacted?: boolean | null
           created_at?: string | null
           email?: string | null
-          event_id: string
+          event_id?: string | null
           first_name: string
           id?: string
           last_name: string
@@ -282,7 +282,7 @@ export type Database = {
           contacted?: boolean | null
           created_at?: string | null
           email?: string | null
-          event_id?: string
+          event_id?: string | null
           first_name?: string
           id?: string
           last_name?: string
