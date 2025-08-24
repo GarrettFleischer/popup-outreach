@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { PageSizeSelector } from "@/components/ui/PageSizeSelector";
 import {
-  getEventsWithStats,
-  getEventsWithStatsAndPagination,
+  getUpcomingEventsWithStats,
+  getPastEventsWithStatsAndPagination,
   type EventWithStats,
 } from "@/utils/supabase/actions/actions";
 import CreateEventDialog from "./CreateEventDialog";
@@ -18,7 +18,8 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 export default function EventsManagementTab() {
   const { user } = useAuth();
   const router = useRouter();
-  const [events, setEvents] = useState<EventWithStats[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
+  const [pastEvents, setPastEvents] = useState<EventWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -32,100 +33,33 @@ export default function EventsManagementTab() {
   const [pageSize, setPageSize] = useState(20);
   const [isPageLoading, setIsPageLoading] = useState(false);
 
-  // Separate events into upcoming and past
-  const { upcomingEvents, pastEvents } = useMemo(() => {
-    const now = new Date();
-    const upcoming: EventWithStats[] = [];
-    const past: EventWithStats[] = [];
-
-    events.forEach((event) => {
-      const eventEndDate = event.end_date
-        ? new Date(event.end_date)
-        : new Date(event.date);
-      if (eventEndDate >= now) {
-        upcoming.push(event);
-      } else {
-        past.push(event);
-      }
-    });
-
-    // Sort upcoming events by date (earliest first)
-    upcoming.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    // Sort past events by date (most recent first)
-    past.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    return { upcomingEvents: upcoming, pastEvents: past };
-  }, [events]);
-
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     try {
       if (hidePastEvents) {
         // When hiding past events, only fetch upcoming events (no pagination needed)
-        const eventsData = await getEventsWithStats(showArchived);
-        // Filter to only upcoming events
-        const now = new Date();
-        const upcomingEvents = eventsData.filter((event) => {
-          const eventEndDate = event.end_date
-            ? new Date(event.end_date)
-            : new Date(event.date);
-          return eventEndDate >= now;
-        });
-        setEvents(upcomingEvents);
+        const upcomingEvents = await getUpcomingEventsWithStats(showArchived);
+        setUpcomingEvents(upcomingEvents);
+        setPastEvents([]);
         setTotalCount(upcomingEvents.length);
         setTotalPages(1);
       } else {
         // When showing all events, we need to get upcoming events and paginated past events
         // But we need to be careful not to duplicate events
-        const now = new Date();
 
         // Get upcoming events (all of them, no pagination needed)
-        const upcomingResponse = await getEventsWithStats(showArchived);
-        const upcomingEvents = upcomingResponse.filter((event) => {
-          const eventEndDate = event.end_date
-            ? new Date(event.end_date)
-            : new Date(event.date);
-          return eventEndDate >= now;
-        });
+        const upcomingEvents = await getUpcomingEventsWithStats(showArchived);
 
         // Get paginated past events (only past events, no overlap with upcoming)
-        const pastResponse = await getEventsWithStatsAndPagination({
+        const pastResponse = await getPastEventsWithStatsAndPagination({
           page: currentPage,
           pageSize,
           includeArchived: showArchived,
-          hidePastEvents: false,
         });
 
-        // Filter past events properly using end date logic
-        const pastEvents = pastResponse.events.filter((event) => {
-          const eventEndDate = event.end_date
-            ? new Date(event.end_date)
-            : new Date(event.date);
-          return eventEndDate < now; // Event has ended
-        });
-
-        // Ensure no duplication by checking event IDs
-        const upcomingEventIds = new Set(upcomingEvents.map((e) => e.id));
-        const pastEventsWithoutDuplicates = pastEvents.filter(
-          (event) => !upcomingEventIds.has(event.id)
-        );
-
-        // Debug logging
-        console.log("Events Management Debug:", {
-          upcomingCount: upcomingEvents.length,
-          pastCount: pastEvents.length,
-          pastWithoutDuplicates: pastEventsWithoutDuplicates.length,
-          totalCombined:
-            upcomingEvents.length + pastEventsWithoutDuplicates.length,
-        });
-
-        // Combine upcoming and past events (no duplication)
-        setEvents([...upcomingEvents, ...pastEventsWithoutDuplicates]);
+        // Set upcoming and past events separately
+        setUpcomingEvents(upcomingEvents);
+        setPastEvents(pastResponse.events);
         setTotalCount(pastResponse.totalCount); // This is the count of past events
         setTotalPages(pastResponse.totalPages);
       }
