@@ -168,6 +168,46 @@ export default function EventsManagementTab() {
     };
   }, [user, loadEvents, isRefreshing]);
 
+  // Set up hourly refresh to update event statuses and move completed events to past
+  useEffect(() => {
+    if (!user) return;
+
+    const calculateTimeUntilNextHour = () => {
+      const now = new Date();
+      const nextHour = new Date(now);
+      nextHour.setHours(now.getHours() + 1, 0, 0, 0); // Set to start of next hour
+      return nextHour.getTime() - now.getTime();
+    };
+
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const scheduleNextHourlyRefresh = () => {
+      const timeUntilNextHour = calculateTimeUntilNextHour();
+
+      // Schedule refresh at the start of the next hour
+      timeoutId = setTimeout(() => {
+        if (user) {
+          console.log(
+            "Hourly refresh: updating event statuses and moving completed events to past"
+          );
+          loadEvents();
+          // Schedule the next hourly refresh
+          scheduleNextHourlyRefresh();
+        }
+      }, timeUntilNextHour);
+    };
+
+    // Start the hourly refresh cycle
+    scheduleNextHourlyRefresh();
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [user, loadEvents]);
+
   const handleEditEvent = (event: EventWithStats) => {
     router.push(`/admin/events/${event.id}/edit`);
   };
