@@ -1,7 +1,11 @@
 import React from "react";
 import { Tables } from "@/utils/supabase/database.types";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSuperAdmin, isLeadManager } from "@/utils/supabase/types/users";
+import {
+  isSuperAdmin,
+  isLeadManager,
+  hasAdminAccess,
+} from "@/utils/supabase/types/users";
 import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 
 type LeadWithEventInfo = Tables<"saved"> & {
@@ -179,8 +183,8 @@ export function LeadsTable({
                   Assigned To
                 </th>
               )}
-              {/* Only show Referred By column for super admins (level 0) */}
-              {isSuperAdmin(user?.profile) && (
+              {/* Show Referred By column for super admins (level 0) and lead managers (level 1) */}
+              {hasAdminAccess(user?.profile) && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Referred By
                 </th>
@@ -293,8 +297,8 @@ export function LeadsTable({
                       </div>
                     </td>
                   )}
-                  {/* Only show Referred By cell for super admins (level 0) */}
-                  {isSuperAdmin(user?.profile) && (
+                  {/* Show Referred By cell for super admins (level 0) and lead managers (level 1) */}
+                  {hasAdminAccess(user?.profile) && (
                     <td
                       className={`px-6 py-4 whitespace-nowrap ${
                         isEditable ? "cursor-pointer" : "cursor-default"
