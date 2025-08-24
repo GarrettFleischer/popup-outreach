@@ -74,7 +74,7 @@ export function LeadDialog({
       if (lead) {
         // Editing existing lead
         setFormData({
-          event_id: lead.event_id,
+          event_id: lead.event_id || "",
           first_name: lead.first_name,
           last_name: lead.last_name,
           email: lead.email || "",

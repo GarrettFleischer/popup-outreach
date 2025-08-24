@@ -166,7 +166,7 @@ export default function EventsManagementTab() {
         supabase.removeChannel(channel);
       });
     };
-  }, [user, loadEvents]);
+  }, [user, loadEvents, isRefreshing]);
 
   const handleEditEvent = (event: EventWithStats) => {
     router.push(`/admin/events/${event.id}/edit`);
