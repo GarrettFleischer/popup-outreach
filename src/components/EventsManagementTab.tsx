@@ -4,8 +4,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
+import { PageSizeSelector } from "@/components/ui/PageSizeSelector";
 import {
   getEventsWithStats,
+  getEventsWithStatsAndPagination,
   type EventWithStats,
 } from "@/utils/supabase/actions/actions";
 import CreateEventDialog from "./CreateEventDialog";
@@ -20,6 +23,14 @@ export default function EventsManagementTab() {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // New state for pagination and hide past events
+  const [hidePastEvents, setHidePastEvents] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   // Separate events into upcoming and past
   const { upcomingEvents, pastEvents } = useMemo(() => {
@@ -54,18 +65,106 @@ export default function EventsManagementTab() {
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const eventsData = await getEventsWithStats(showArchived);
-      setEvents(eventsData);
+      if (hidePastEvents) {
+        // When hiding past events, only fetch upcoming events (no pagination needed)
+        const eventsData = await getEventsWithStats(showArchived);
+        // Filter to only upcoming events
+        const now = new Date();
+        const upcomingEvents = eventsData.filter((event) => {
+          const eventEndDate = event.end_date
+            ? new Date(event.end_date)
+            : new Date(event.date);
+          return eventEndDate >= now;
+        });
+        setEvents(upcomingEvents);
+        setTotalCount(upcomingEvents.length);
+        setTotalPages(1);
+      } else {
+        // When showing all events, we need to get upcoming events and paginated past events
+        // But we need to be careful not to duplicate events
+        const now = new Date();
+
+        // Get upcoming events (all of them, no pagination needed)
+        const upcomingResponse = await getEventsWithStats(showArchived);
+        const upcomingEvents = upcomingResponse.filter((event) => {
+          const eventEndDate = event.end_date
+            ? new Date(event.end_date)
+            : new Date(event.date);
+          return eventEndDate >= now;
+        });
+
+        // Get paginated past events (only past events, no overlap with upcoming)
+        const pastResponse = await getEventsWithStatsAndPagination({
+          page: currentPage,
+          pageSize,
+          includeArchived: showArchived,
+          hidePastEvents: false,
+        });
+
+        // Filter past events properly using end date logic
+        const pastEvents = pastResponse.events.filter((event) => {
+          const eventEndDate = event.end_date
+            ? new Date(event.end_date)
+            : new Date(event.date);
+          return eventEndDate < now; // Event has ended
+        });
+
+        // Ensure no duplication by checking event IDs
+        const upcomingEventIds = new Set(upcomingEvents.map((e) => e.id));
+        const pastEventsWithoutDuplicates = pastEvents.filter(
+          (event) => !upcomingEventIds.has(event.id)
+        );
+
+        // Debug logging
+        console.log("Events Management Debug:", {
+          upcomingCount: upcomingEvents.length,
+          pastCount: pastEvents.length,
+          pastWithoutDuplicates: pastEventsWithoutDuplicates.length,
+          totalCombined:
+            upcomingEvents.length + pastEventsWithoutDuplicates.length,
+        });
+
+        // Combine upcoming and past events (no duplication)
+        setEvents([...upcomingEvents, ...pastEventsWithoutDuplicates]);
+        setTotalCount(pastResponse.totalCount); // This is the count of past events
+        setTotalPages(pastResponse.totalPages);
+      }
     } catch (error) {
       console.error("Error loading events:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [showArchived]);
+  }, [showArchived, hidePastEvents, currentPage, pageSize]);
 
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (isPageLoading) return; // Prevent multiple simultaneous requests
+    if (page === currentPage) return; // Don't change to the same page
+    setIsPageLoading(true);
+    setCurrentPage(page);
+  };
+
+  // Reset page loading state when events are loaded
+  useEffect(() => {
+    if (!isLoading) {
+      setIsPageLoading(false);
+    }
+  }, [isLoading]);
+
+  // Handle page size change
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [hidePastEvents, showArchived]);
 
   // Set up real-time subscriptions for live updates
   useEffect(() => {
@@ -88,10 +187,10 @@ export default function EventsManagementTab() {
         (payload) => {
           console.log("Events realtime update:", payload);
           // Refresh events when any event is created, updated, or deleted
-          if (!isRefreshing && isMounted) {
+          if (!isRefreshing && isMounted && !isPageLoading) {
             setIsRefreshing(true);
             setTimeout(() => {
-              if (isMounted) {
+              if (isMounted && !isPageLoading) {
                 loadEvents();
                 setIsRefreshing(false);
               }
@@ -116,10 +215,10 @@ export default function EventsManagementTab() {
         (payload) => {
           console.log("Attendees realtime update:", payload);
           // Refresh events to get updated attendee counts
-          if (!isRefreshing && isMounted) {
+          if (!isRefreshing && isMounted && !isPageLoading) {
             setIsRefreshing(true);
             setTimeout(() => {
-              if (isMounted) {
+              if (isMounted && !isPageLoading) {
                 loadEvents();
                 setIsRefreshing(false);
               }
@@ -144,10 +243,10 @@ export default function EventsManagementTab() {
         (payload) => {
           console.log("Saved submissions realtime update:", payload);
           // Refresh events to get updated saved counts
-          if (!isRefreshing && isMounted) {
+          if (!isRefreshing && isMounted && !isPageLoading) {
             setIsRefreshing(true);
             setTimeout(() => {
-              if (isMounted) {
+              if (isMounted && !isPageLoading) {
                 loadEvents();
                 setIsRefreshing(false);
               }
@@ -166,7 +265,7 @@ export default function EventsManagementTab() {
         supabase.removeChannel(channel);
       });
     };
-  }, [user, loadEvents, isRefreshing]);
+  }, [user, loadEvents, isRefreshing, isPageLoading]);
 
   // Set up hourly refresh to update event statuses and move completed events to past
   useEffect(() => {
@@ -186,7 +285,7 @@ export default function EventsManagementTab() {
 
       // Schedule refresh at the start of the next hour
       timeoutId = setTimeout(() => {
-        if (user) {
+        if (user && !isPageLoading) {
           console.log(
             "Hourly refresh: updating event statuses and moving completed events to past"
           );
@@ -206,7 +305,7 @@ export default function EventsManagementTab() {
         clearTimeout(timeoutId);
       }
     };
-  }, [user, loadEvents]);
+  }, [user, loadEvents, isPageLoading]);
 
   const handleEditEvent = (event: EventWithStats) => {
     router.push(`/admin/events/${event.id}/edit`);
@@ -319,19 +418,30 @@ export default function EventsManagementTab() {
           <p className="text-sm text-gray-600 mb-2">
             Manage your upcoming and past events
           </p>
-          <div className="flex items-center mt-2">
-            <input
-              type="checkbox"
-              id="showArchived"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="showArchived"
-              className="ml-2 block text-sm text-gray-700"
-            >
-              Show archived events
+          <div className="flex items-center mt-2 space-x-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                id="showArchived"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 block text-sm text-gray-700">
+                Show archived events
+              </span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                id="hidePastEvents"
+                checked={hidePastEvents}
+                onChange={(e) => setHidePastEvents(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 block text-sm text-gray-700">
+                Hide past events
+              </span>
             </label>
           </div>
         </div>
@@ -461,128 +571,163 @@ export default function EventsManagementTab() {
         )}
       </div>
 
-      {/* Past Events Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Past Events ({pastEvents.length})
-            {isRefreshing && !isLoading && (
-              <span className="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                Updating...
-              </span>
-            )}
-          </h3>
-        </div>
-
-        {pastEvents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No past events</p>
-            <p className="text-sm">
-              Past events will appear here once they&apos;re completed
-            </p>
+      {/* Past Events Table - Only show when not hiding past events */}
+      {!hidePastEvents && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Past Events ({pastEvents.length})
+              {isRefreshing && !isLoading && (
+                <span className="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                  Updating...
+                </span>
+              )}
+            </h3>
           </div>
-        ) : (
-          <div className="overflow-x-auto -mx-6 sm:mx-0">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4 min-w-[150px]">
-                    Event
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[280px]">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 min-w-[80px]">
-                    Attendees
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
-                    Saved
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 min-w-[100px]">
-                    Link
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {pastEvents.map((event) => (
-                  <tr
-                    key={event.id}
-                    className={`hover:bg-gray-50 cursor-pointer ${
-                      event.archived ? "bg-gray-50 opacity-75" : ""
-                    }`}
-                    onClick={() => handleEditEvent(event)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="min-w-0">
-                        <div
-                          className={`text-sm font-medium ${
-                            event.archived ? "text-gray-600" : "text-gray-900"
-                          }`}
-                        >
-                          {event.name}
-                          {event.archived && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                              Archived
-                            </span>
+
+          {pastEvents.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p className="text-lg mb-2">No past events</p>
+              <p className="text-sm">
+                Past events will appear here once they&apos;re completed
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-6 sm:mx-0">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4 min-w-[150px]">
+                      Event
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[280px]">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 min-w-[80px]">
+                      Attendees
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 min-w-[80px]">
+                      Saved
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 min-w-[100px]">
+                      Link
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {pastEvents.map((event) => (
+                    <tr
+                      key={event.id}
+                      className={`hover:bg-gray-50 cursor-pointer ${
+                        event.archived ? "bg-gray-50 opacity-75" : ""
+                      }`}
+                      onClick={() => handleEditEvent(event)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="min-w-0">
+                          <div
+                            className={`text-sm font-medium ${
+                              event.archived ? "text-gray-600" : "text-gray-900"
+                            }`}
+                          >
+                            {event.name}
+                            {event.archived && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                Archived
+                              </span>
+                            )}
+                          </div>
+                          {event.description && (
+                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                              {event.description}
+                            </div>
                           )}
                         </div>
-                        {event.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {event.description}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td
-                      className={`px-6 py-4 text-sm ${
-                        event.archived ? "text-gray-600" : "text-gray-900"
-                      }`}
-                    >
-                      <div className="whitespace-pre-line break-words min-w-0">
-                        {formatDate(event.date, event.end_date)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          getEventStatus(event).className
+                      </td>
+                      <td
+                        className={`px-6 py-4 text-sm ${
+                          event.archived ? "text-gray-600" : "text-gray-900"
                         }`}
                       >
-                        {getEventStatus(event).text}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {event.attendee_count}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {event.saved_count}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`/events/${event.url_slug}`, "_blank");
-                        }}
-                      >
-                        Open Event
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <div className="whitespace-pre-line break-words min-w-0">
+                          {formatDate(event.date, event.end_date)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            getEventStatus(event).className
+                          }`}
+                        >
+                          {getEventStatus(event).text}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {event.attendee_count}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {event.saved_count}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/events/${event.url_slug}`, "_blank");
+                          }}
+                        >
+                          Open Event
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Page Size Selector and Pagination - Only show for past events when not hiding them */}
+      {!hidePastEvents && pastEvents.length > 0 && (
+        <>
+          {/* Page Size Selector */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing {pastEvents.length} of {totalCount} past events
+                {isPageLoading && (
+                  <span className="ml-2 text-blue-600">Loading...</span>
+                )}
+              </div>
+              <PageSizeSelector
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+                isLoading={isPageLoading}
+              />
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            isLoading={isPageLoading}
+            itemName="past events"
+          />
+        </>
+      )}
 
       <CreateEventDialog
         isOpen={showCreateEvent}

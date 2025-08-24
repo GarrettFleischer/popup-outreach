@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
+import { PageSizeSelector } from "@/components/ui/PageSizeSelector";
 import { LeadsTable } from "@/components/LeadsTable";
 import { LeadDialog, type LeadFormData } from "@/components/LeadDialog";
 import { isSuperAdmin, isLeadManager } from "@/utils/supabase/types/users";
@@ -480,25 +482,15 @@ export default function LeadsManagement() {
           {/* Controls Row - Stack on mobile, horizontal on desktop */}
           <div className="space-y-3 lg:space-y-0 lg:flex lg:items-center lg:space-x-6">
             {/* Page Size Selector */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-900">Show:</label>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                  // loadLeads() will be called automatically by the useEffect when pageSize changes
-                }}
-                disabled={isPageLoading}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <span className="text-sm text-gray-900">per page</span>
-            </div>
+            <PageSizeSelector
+              pageSize={pageSize}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+                // loadLeads() will be called automatically by the useEffect when pageSize changes
+              }}
+              isLoading={isPageLoading}
+            />
 
             {/* Checkboxes Row - Stack on mobile, horizontal on desktop */}
             <div className="space-y-2 lg:space-y-0 lg:flex lg:items-center lg:space-x-4">
@@ -570,66 +562,15 @@ export default function LeadsManagement() {
 
       {/* Pagination Controls - Only show when not loading and there are pages */}
       {!isPageLoading && totalPages > 1 && (
-        <div className="bg-white rounded-lg shadow p-4 mt-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {(currentPage - 1) * pageSize + 1} to{" "}
-              {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
-              leads
-              {isPageLoading && (
-                <span className="ml-2 text-blue-600">Loading...</span>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || isPageLoading}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              {/* Page numbers */}
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      disabled={isPageLoading}
-                      className={`px-3 py-2 text-sm font-medium rounded-md ${
-                        currentPage === pageNum
-                          ? "bg-blue-600 text-white"
-                          : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:cursor-pointer"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || isPageLoading}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          isLoading={isPageLoading}
+          itemName="leads"
+        />
       )}
 
       <LeadDialog

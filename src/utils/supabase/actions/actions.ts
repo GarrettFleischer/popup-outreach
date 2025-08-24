@@ -64,6 +64,95 @@ export async function getEventsWithStats(
   return eventsWithStats;
 }
 
+export async function getEventsWithStatsAndPagination({
+  page = 1,
+  pageSize = 20,
+  includeArchived = false,
+  hidePastEvents = false,
+}: {
+  page?: number;
+  pageSize?: number;
+  includeArchived?: boolean;
+  hidePastEvents?: boolean;
+}): Promise<{
+  events: EventWithStats[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  const supabase = createClient();
+
+  let query = supabase.from("events").select("*", { count: "exact" });
+
+  if (!includeArchived) {
+    query = query.eq("archived", false);
+  }
+
+  if (hidePastEvents) {
+    // For upcoming events, just get all events and filter client-side
+    // This ensures we don't miss events that are currently active
+  } else {
+    // When not hiding past events, we want to paginate through past events
+    // Get all events and filter client-side for proper end date logic
+  }
+
+  // Get all events first to calculate the correct past events count
+  const { data: allEvents, error: allEventsError } = await query.order("date", {
+    ascending: false,
+  });
+
+  if (allEventsError) {
+    console.error("Error fetching all events:", allEventsError);
+    throw new Error("Failed to fetch events");
+  }
+
+  // Filter to get past events count (events that have ended)
+  const now = new Date();
+  const pastEvents = (allEvents || []).filter((event) => {
+    const eventEndDate = event.end_date
+      ? new Date(event.end_date)
+      : new Date(event.date);
+    return eventEndDate < now;
+  });
+
+  const totalCount = pastEvents.length;
+
+  // Apply pagination to the past events
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const paginatedPastEvents = pastEvents.slice(from, to);
+
+  // Get attendee and saved counts for each paginated past event
+  const eventsWithStats = await Promise.all(
+    paginatedPastEvents.map(async (event: Tables<"events">) => {
+      const { count: attendeeCount } = await supabase
+        .from("attendees")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id);
+
+      const { count: savedCount } = await supabase
+        .from("saved")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id);
+
+      return {
+        ...event,
+        attendee_count: attendeeCount || 0,
+        saved_count: savedCount || 0,
+      };
+    })
+  );
+
+  const totalPages = Math.ceil((totalCount || 0) / pageSize);
+
+  return {
+    events: eventsWithStats,
+    totalCount: totalCount || 0,
+    totalPages,
+    currentPage: page,
+  };
+}
+
 export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
   const supabase = createClient();
 
